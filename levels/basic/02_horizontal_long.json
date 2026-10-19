@@ -1,0 +1,7 @@
+{
+  "name": "Long Horizontal Corridor",
+  "grid": [
+    "S#####G"
+  ],
+  "expected_bfs_length": 4
+}

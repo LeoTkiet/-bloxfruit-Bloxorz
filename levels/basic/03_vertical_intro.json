@@ -1,0 +1,10 @@
+{
+  "name": "Vertical Introduction",
+  "grid": [
+    "S",
+    "#",
+    "#",
+    "G"
+  ],
+  "expected_bfs_length": 2
+}
