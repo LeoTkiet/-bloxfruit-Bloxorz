@@ -1,0 +1,10 @@
+{
+  "name": "Open Corner",
+  "grid": [
+    "S###",
+    "####",
+    "####",
+    "###G"
+  ],
+  "expected_bfs_length": 4
+}

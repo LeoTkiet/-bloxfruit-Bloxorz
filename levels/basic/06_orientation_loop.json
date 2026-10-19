@@ -1,0 +1,11 @@
+{
+  "name": "Orientation Loop",
+  "grid": [
+    "#####",
+    "#S###",
+    "#####",
+    "###G#",
+    "#####"
+  ],
+  "expected_bfs_length": 6
+}

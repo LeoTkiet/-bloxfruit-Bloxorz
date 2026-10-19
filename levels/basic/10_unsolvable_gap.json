@@ -1,0 +1,7 @@
+{
+  "name": "Unsolvable Gap",
+  "grid": [
+    "S..G"
+  ],
+  "expected_bfs_length": null
+}
