@@ -1,0 +1,11 @@
+{
+  "name": "Soft Switch Bridge",
+  "description": "A lying block covering the soft switch opens the bridge ahead.",
+  "grid": [
+    "S#o11#G"
+  ],
+  "switches": [
+    {"at": [0, 2], "mode": "toggle", "targets": [1]}
+  ],
+  "expected_bfs_length": 4
+}

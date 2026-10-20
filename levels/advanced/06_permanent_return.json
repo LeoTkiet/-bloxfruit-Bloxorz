@@ -1,0 +1,11 @@
+{
+  "name": "Permanent Return",
+  "description": "A permanent switch keeps the bridge open on the way back.",
+  "grid": [
+    "G11S##o"
+  ],
+  "switches": [
+    {"at": [0, 6], "mode": "permanent_open", "targets": [1]}
+  ],
+  "expected_bfs_length": 6
+}

@@ -20,8 +20,24 @@ from .core import (
     try_move,
 )
 from .level_loader import LevelFormatError, load_level, parse_grid
+from .tiles import (
+    EMPTY_LAYOUT,
+    MAX_BRIDGES,
+    Switch,
+    SwitchKind,
+    SwitchMode,
+    TileLayout,
+    bridge_bit,
+)
 
 __all__ = [
+    "EMPTY_LAYOUT",
+    "MAX_BRIDGES",
+    "Switch",
+    "SwitchKind",
+    "SwitchMode",
+    "TileLayout",
+    "bridge_bit",
     "ACTION_ORDER",
     "Action",
     "GameState",

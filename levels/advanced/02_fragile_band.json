@@ -1,0 +1,13 @@
+{
+  "name": "Fragile Band",
+  "description": "A full row of fragile tiles; the block may only cross it lying down.",
+  "grid": [
+    "####",
+    "#S##",
+    "####",
+    "FFFF",
+    "####",
+    "##G#"
+  ],
+  "expected_bfs_length": 6
+}

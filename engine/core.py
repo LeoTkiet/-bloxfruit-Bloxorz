@@ -6,16 +6,19 @@ The anchor convention is deliberately simple and shared by every caller:
 * a horizontal block is anchored at its left occupied cell; and
 * a vertical block is anchored at its top occupied cell.
 
-Advanced tile effects and split-block movement belong to the corresponding
-team modules. The immutable state already reserves their search-relevant data
+Advanced tile effects (fragile floor, bridges, switches) live in
+``engine.tiles`` and are applied inside :func:`try_move`; split-block movement
+belongs to TV3. The immutable state already reserves their search-relevant data
 so that every solver can use the complete state as a hash key.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Iterable, TypeAlias
+
+from .tiles import EMPTY_LAYOUT, TileLayout
 
 
 Position: TypeAlias = tuple[int, int]
@@ -140,6 +143,7 @@ class Level:
     start: Position
     goal: Position
     initial_bridge_mask: int = 0
+    tiles: TileLayout = EMPTY_LAYOUT
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
@@ -156,6 +160,10 @@ class Level:
         for position in self.floor_tiles:
             if not self.contains(position):
                 raise ValueError(f"floor tile {position} is outside the board")
+        for position in (*self.tiles.bridge_cells, *self.tiles.switches):
+            if not self.contains(position):
+                raise ValueError(f"advanced tile {position} is outside the board")
+        self.tiles.validate(self.floor_tiles, self.start, self.goal)
 
     def contains(self, position: Position) -> bool:
         """Return whether a coordinate lies inside the rectangular board."""
@@ -236,18 +244,46 @@ def roll(state: GameState, action: Action) -> GameState:
 
 
 def is_state_supported(level: Level, state: GameState) -> bool:
-    """Return whether every occupied cell is a standard solid tile."""
+    """Return whether the placement is legal under the state's bridge mask.
 
-    return all(
-        level.contains(position) and position in level.floor_tiles
-        for position in occupied_cells(state)
-    )
+    Every occupied cell must lie on the board and be a floor tile or an open
+    bridge, and an upright block must not stand on a fragile tile. Reserved
+    split states are not subject to the fragile rule (TV3 decides it).
+    """
+
+    cells = occupied_cells(state)
+    if not all(
+        level.contains(position)
+        and level.tiles.is_cell_supported(position, level.floor_tiles, state.bridge_mask)
+        for position in cells
+    ):
+        return False
+    standing = state.orientation is Orientation.STANDING
+    return not level.tiles.violates_fragile(cells, standing=standing)
 
 
 def try_move(level: Level, state: GameState, action: Action) -> GameState | None:
-    """Return the next state, or ``None`` when the standard roll is illegal."""
+    """Return the next state, or ``None`` when the roll is illegal.
+
+    The pipeline is: geometric roll -> support/fragile check under the old
+    bridge mask -> fire the switches pressed by the landing placement ->
+    support check again under the new mask (a bridge closed beneath the block
+    makes it fall). See :mod:`engine.tiles` for the exact trigger rules.
+    """
 
     candidate = roll(state, action)
+    if not is_state_supported(level, candidate):
+        return None
+    if level.tiles.is_empty:
+        return candidate
+
+    standing = candidate.orientation is Orientation.STANDING
+    new_mask = level.tiles.apply_triggers(
+        occupied_cells(candidate), candidate.bridge_mask, standing=standing
+    )
+    if new_mask == candidate.bridge_mask:
+        return candidate
+    candidate = replace(candidate, bridge_mask=new_mask)
     return candidate if is_state_supported(level, candidate) else None
 
 

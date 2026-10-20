@@ -1,0 +1,12 @@
+{
+  "name": "Toggle Two Bridges",
+  "description": "One toggle closes the open bridge 1 behind the block and opens bridge 2 ahead.",
+  "grid": [
+    "S###11o22G"
+  ],
+  "initial_bridge_mask": 1,
+  "switches": [
+    {"at": [0, 6], "mode": "toggle", "targets": [1, 2]}
+  ],
+  "expected_bfs_length": 6
+}
