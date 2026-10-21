@@ -1,0 +1,16 @@
+{
+  "name": "Advanced Mix",
+  "description": "Fragile floor, a heavy permanent switch and a soft toggle switch with two bridges.",
+  "grid": [
+    "######",
+    "##2x##",
+    "###1G1",
+    "S#1o##",
+    "#F#2F#"
+  ],
+  "switches": [
+    {"at": [1, 3], "mode": "permanent_open", "targets": [1]},
+    {"at": [3, 3], "mode": "toggle", "targets": [2]}
+  ],
+  "expected_bfs_length": 13
+}

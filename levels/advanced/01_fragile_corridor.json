@@ -1,0 +1,8 @@
+{
+  "name": "Fragile Corridor",
+  "description": "A 1-wide corridor whose middle tiles are fragile: the block must cross them lying down.",
+  "grid": [
+    "SFF#FFG"
+  ],
+  "expected_bfs_length": 4
+}

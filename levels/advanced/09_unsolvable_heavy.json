@@ -1,0 +1,11 @@
+{
+  "name": "Unsolvable Heavy",
+  "description": "The heavy switch can only ever be covered by a lying block, so the bridge never opens.",
+  "grid": [
+    "S###x#111G"
+  ],
+  "switches": [
+    {"at": [0, 4], "mode": "permanent_open", "targets": [1]}
+  ],
+  "expected_bfs_length": null
+}

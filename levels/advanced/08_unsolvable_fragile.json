@@ -1,0 +1,8 @@
+{
+  "name": "Unsolvable Fragile",
+  "description": "The only route needs an upright block on a fragile tile.",
+  "grid": [
+    "S##F##G"
+  ],
+  "expected_bfs_length": null
+}
