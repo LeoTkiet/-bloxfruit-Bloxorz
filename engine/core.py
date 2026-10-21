@@ -33,12 +33,13 @@ class Orientation(str, Enum):
 
 
 class Action(str, Enum):
-    """A standard block roll."""
+    """A standard block roll or split-cube switch."""
 
     UP = "up"
     DOWN = "down"
     LEFT = "left"
     RIGHT = "right"
+    SWITCH = "switch"
 
 
 ACTION_ORDER: tuple[Action, ...] = (
@@ -144,6 +145,7 @@ class Level:
     goal: Position
     initial_bridge_mask: int = 0
     tiles: TileLayout = EMPTY_LAYOUT
+    split_switches: tuple[tuple[Position, tuple[Position, Position]], ...] = ()
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
@@ -164,6 +166,22 @@ class Level:
             if not self.contains(position):
                 raise ValueError(f"advanced tile {position} is outside the board")
         self.tiles.validate(self.floor_tiles, self.start, self.goal)
+        if isinstance(self.split_switches, dict):
+            object.__setattr__(self, "split_switches", tuple(self.split_switches.items()))
+        for switch_pos, targets in self.split_switches:
+            if not self.contains(switch_pos) or switch_pos not in self.floor_tiles:
+                raise ValueError(f"split switch {switch_pos} must be inside board and supported")
+            if len(targets) != 2 or targets[0] == targets[1]:
+                raise ValueError("split switch must target two distinct coordinates")
+            for target in targets:
+                if not self.contains(target) or target not in self.floor_tiles:
+                    raise ValueError(f"split switch target {target} must be inside board and supported")
+
+    @property
+    def split_switch_map(self) -> dict[Position, tuple[Position, Position]]:
+        """Return split switches as a position-to-targets dictionary."""
+
+        return dict(self.split_switches)
 
     def contains(self, position: Position) -> bool:
         """Return whether a coordinate lies inside the rectangular board."""
@@ -207,6 +225,8 @@ def roll(state: GameState, action: Action) -> GameState:
 
     if state.is_split:
         raise UnsupportedStateError("split-block movement is not part of the core module")
+    if action is Action.SWITCH:
+        raise IllegalMoveError("cannot switch active cube on an intact block")
     if state.position is None or state.orientation is None:
         raise ValueError("state is missing its standard block fields")
 
@@ -263,28 +283,39 @@ def is_state_supported(level: Level, state: GameState) -> bool:
 
 
 def try_move(level: Level, state: GameState, action: Action) -> GameState | None:
-    """Return the next state, or ``None`` when the roll is illegal.
+    """Return the next state, or ``None`` when the move is illegal.
 
     The pipeline is: geometric roll -> support/fragile check under the old
     bridge mask -> fire the switches pressed by the landing placement ->
     support check again under the new mask (a bridge closed beneath the block
-    makes it fall). See :mod:`engine.tiles` for the exact trigger rules.
+    makes it fall). Split-block states are handled by :mod:`engine.split`.
     """
+
+    if state.is_split:
+        from .split import try_move_split
+
+        return try_move_split(level, state, action)
+
+    if action is Action.SWITCH:
+        return None
 
     candidate = roll(state, action)
     if not is_state_supported(level, candidate):
         return None
-    if level.tiles.is_empty:
-        return candidate
 
-    standing = candidate.orientation is Orientation.STANDING
-    new_mask = level.tiles.apply_triggers(
-        occupied_cells(candidate), candidate.bridge_mask, standing=standing
-    )
-    if new_mask == candidate.bridge_mask:
-        return candidate
-    candidate = replace(candidate, bridge_mask=new_mask)
-    return candidate if is_state_supported(level, candidate) else None
+    if not level.tiles.is_empty:
+        standing = candidate.orientation is Orientation.STANDING
+        new_mask = level.tiles.apply_triggers(
+            occupied_cells(candidate), candidate.bridge_mask, standing=standing
+        )
+        if new_mask != candidate.bridge_mask:
+            candidate = replace(candidate, bridge_mask=new_mask)
+            if not is_state_supported(level, candidate):
+                return None
+
+    from .split import check_split_switch_trigger
+
+    return check_split_switch_trigger(level, candidate)
 
 
 def apply_action(level: Level, state: GameState, action: Action) -> GameState:
@@ -307,7 +338,12 @@ def is_goal(level: Level, state: GameState) -> bool:
 
 
 def get_successors(level: Level, state: GameState) -> list[Successor]:
-    """Return legal standard rolls in a deterministic order with unit costs."""
+    """Return legal rolls in a deterministic order with unit costs."""
+
+    if state.is_split:
+        from .split import get_split_successors
+
+        return get_split_successors(level, state)
 
     successors: list[Successor] = []
     for action in ACTION_ORDER:

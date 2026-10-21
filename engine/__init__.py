@@ -29,6 +29,13 @@ from .tiles import (
     TileLayout,
     bridge_bit,
 )
+from .split import (
+    SPLIT_ACTION_ORDER,
+    check_merge,
+    check_split_switch_trigger,
+    get_split_successors,
+    try_move_split,
+)
 
 __all__ = [
     "EMPTY_LAYOUT",
@@ -46,9 +53,13 @@ __all__ = [
     "LevelFormatError",
     "Orientation",
     "Position",
+    "SPLIT_ACTION_ORDER",
     "Successor",
     "UnsupportedStateError",
     "apply_action",
+    "check_merge",
+    "check_split_switch_trigger",
+    "get_split_successors",
     "get_successors",
     "is_goal",
     "is_state_supported",
@@ -58,4 +69,5 @@ __all__ = [
     "replay",
     "roll",
     "try_move",
+    "try_move_split",
 ]
