@@ -1,0 +1,13 @@
+{
+  "name": "03 - Classic stage 1",
+  "description": "Basic: stage 1 of the original Bloxorz.",
+  "grid": [
+    "###.......",
+    "#S####....",
+    "#########.",
+    ".#########",
+    ".....##G##",
+    "......###."
+  ],
+  "expected_bfs_length": 7
+}

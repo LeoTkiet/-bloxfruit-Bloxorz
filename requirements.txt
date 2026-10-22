@@ -1,0 +1,2 @@
+# No third-party packages are needed to run the game: the GUI uses Tkinter (Python standard library).
+# On Ubuntu/Debian install Tkinter with:  sudo apt install python3-tk

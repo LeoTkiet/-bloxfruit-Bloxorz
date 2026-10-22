@@ -1,0 +1,14 @@
+{
+  "name": "05 - Soft switch and bridge",
+  "description": "Touch the round switch (any orientation) to open the bridge.",
+  "grid": [
+    "###o......",
+    "#S##11###.",
+    "####11#G#.",
+    "......###."
+  ],
+  "switches": [
+    {"at": [0, 3], "mode": "toggle", "targets": [1]}
+  ],
+  "expected_bfs_length": 7
+}

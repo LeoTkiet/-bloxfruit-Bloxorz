@@ -1,0 +1,14 @@
+{
+  "name": "06 - Heavy switch",
+  "description": "Only a standing block can press the X switch; it opens the bridge for good.",
+  "grid": [
+    "###.........",
+    "#S###11###..",
+    "###x#11#G#..",
+    ".........#.."
+  ],
+  "switches": [
+    {"at": [2, 3], "mode": "permanent_open", "targets": [1]}
+  ],
+  "expected_bfs_length": 18
+}

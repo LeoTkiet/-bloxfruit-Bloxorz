@@ -2,15 +2,43 @@
 
 This repository currently contains the TV1 handoff (shared immutable state
 model, standard block mechanics, JSON/text level loading, BFS, required search
-metrics, core tests) and the TV2 handoff (fragile tiles, bridges, soft/heavy
-switches with toggle/permanent modes, DFS and IDS, advanced stages and tests).
-Split-block movement, UCS, A*, the GUI, experiments, and final media remain
-intentionally unimplemented for their assigned team members.
+metrics, core tests), the TV2 handoff (fragile tiles, bridges, soft/heavy
+switches with toggle/permanent modes, DFS and IDS, advanced stages and tests)
+and the TV5 handoff (3D Tkinter GUI: manual play, solver buttons, metrics and
+solution replay). Split-block movement, UCS, A*, experiments, and final media
+remain for their assigned team members; the GUI enables the UCS and A* buttons
+by itself once `solvers/ucs.py` and `solvers/astar.py` are merged.
 
 ## Requirements
 
 - Python 3.10 or newer
-- No third-party packages for the current TV1 and TV2 modules
+- Tkinter for the GUI (bundled with the python.org installers for Windows and
+  macOS; on Ubuntu/Debian: `sudo apt install python3-tk`)
+- No third-party packages
+
+## Play (GUI)
+
+```bash
+python main.py                                    # opens levels/basic/01_horizontal_intro.json
+python main.py levels/demo/08_showcase.json       # opens a specific stage
+```
+
+| Key | Action |
+|---|---|
+| Arrows or W A S D | Roll the block (move the selected cube after a split) |
+| Space | Switch the controlled cube after a split |
+| Z, Ctrl+Z or Backspace | Undo a move (including the one that made the block fall) |
+| R / Enter | Restart the stage / next stage after a win |
+| P | Play or pause the solution replay |
+| Mouse drag, wheel, Q / E, V | Orbit, zoom, turn the camera 15°, reset the view |
+
+The side panel holds New Game, Restart, Open..., the solver buttons (BFS, DFS,
+IDS, UCS, A*), the metrics of the last search and the replay controls. Every
+move, win check and replayed solution goes through the shared engine; the GUI
+has no rules of its own. The stage list shows `levels/basic`, then
+`levels/advanced`, then `levels/demo` (the stages used in the demo video).
+Details, the 3D assets and integration notes are in
+[`docs/tv5_handoff.md`](docs/tv5_handoff.md).
 
 ## Run the tests
 
@@ -22,7 +50,12 @@ The suite verifies every one of the 12 orientation-direction transitions,
 state hashing, illegal moves, the goal test, both level formats, BFS behavior,
 metrics, ten core level cases, every advanced tile and switch kind (at least a
 valid and an invalid case each), the advanced level format, nine advanced
-stages, and DFS/IDS correctness, optimality and termination.
+stages, and DFS/IDS correctness, optimality and termination. The GUI tests
+check that every stage loads into the board view exactly as the engine sees it,
+that every available solver's answer replays to the goal, that each 3D roll
+lands on the engine's footprint and that the 3D assets match their generator
+(`python tools/build_models.py`); tests that open a window are skipped when no
+display is available.
 
 ## Run BFS
 

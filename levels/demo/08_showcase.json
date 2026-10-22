@@ -1,0 +1,18 @@
+{
+  "name": "08 - Showcase",
+  "description": "Fragile ice, a soft switch and a heavy switch, each opening its own bridge.",
+  "grid": [
+    "##o#...........",
+    "#S##11###......",
+    "####11###......",
+    "......FFF......",
+    "......FFF..###.",
+    "......###22#G#.",
+    "......#x#22###."
+  ],
+  "switches": [
+    {"at": [0, 2], "mode": "toggle", "targets": [1]},
+    {"at": [6, 7], "mode": "permanent_open", "targets": [2]}
+  ],
+  "expected_bfs_length": 24
+}
