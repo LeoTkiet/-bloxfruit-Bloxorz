@@ -1,0 +1,14 @@
+{
+  "name": "Split Introduction",
+  "grid": [
+    "S###",
+    "....",
+    "###G"
+  ],
+  "split_switches": [
+    {
+      "position": [0, 3],
+      "targets": [[2, 0], [2, 2]]
+    }
+  ]
+}

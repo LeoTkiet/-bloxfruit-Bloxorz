@@ -100,6 +100,7 @@ def parse_grid(
     name: str = "Unnamed level",
     initial_bridge_mask: int = 0,
     switches: Sequence[Mapping[str, Any]] | None = None,
+    split_switches: Sequence[Any] = (),
 ) -> Level:
     """Parse grid rows into a validated level.
 
@@ -188,6 +189,7 @@ def parse_grid(
             goal=goals[0],
             initial_bridge_mask=initial_bridge_mask,
             tiles=layout,
+            split_switches=tuple(split_switches),
         )
     except ValueError as error:
         raise LevelFormatError(str(error)) from error
@@ -209,11 +211,22 @@ def _load_json(path: Path) -> Level:
     if not isinstance(name, str):
         raise LevelFormatError("level name must be a string")
 
+    raw_split = data.get("split_switches", [])
+    parsed_split: list[tuple[Position, tuple[Position, Position]]] = []
+    if isinstance(raw_split, list):
+        for item in raw_split:
+            if isinstance(item, dict) and "position" in item and "targets" in item:
+                pos = (int(item["position"][0]), int(item["position"][1]))
+                t1 = (int(item["targets"][0][0]), int(item["targets"][0][1]))
+                t2 = (int(item["targets"][1][0]), int(item["targets"][1][1]))
+                parsed_split.append((pos, (t1, t2)))
+
     return parse_grid(
         rows,
         name=name,
         initial_bridge_mask=data.get("initial_bridge_mask", 0),
         switches=data.get("switches"),
+        split_switches=parsed_split,
     )
 
 
