@@ -1,4 +1,4 @@
-"""Shared solver result types."""
+"""Shared solver result types and path reconstruction."""
 
 from __future__ import annotations
 
@@ -6,6 +6,29 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.core import Action, GameState
+
+
+ParentEntry = tuple[GameState | None, Action | None]
+
+
+def reconstruct_path(
+    goal_state: GameState,
+    parents: dict[GameState, ParentEntry],
+) -> tuple[tuple[Action, ...], tuple[GameState, ...]]:
+    """Follow parent links and return moves and states from start to goal."""
+    moves: list[Action] = []
+    states: list[GameState] = []
+    current = goal_state
+    while True:
+        states.append(current)
+        parent, action = parents[current]
+        if parent is None:
+            break
+        if action is None:
+            raise ValueError("a non-initial state must have a parent action")
+        moves.append(action)
+        current = parent
+    return tuple(reversed(moves)), tuple(reversed(states))
 
 
 @dataclass(frozen=True, slots=True)

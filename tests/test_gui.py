@@ -32,6 +32,12 @@ class BackendTest(unittest.TestCase):
     def setUp(self):
         self.backend = load_backend()
 
+    def test_bundled_solvers_are_available(self):
+        self.assertEqual(self.backend.unavailable, {})
+        for label in SOLVER_LABELS:
+            with self.subTest(solver=label):
+                self.assertTrue(callable(self.backend.solvers[label]))
+
     def test_every_solver_replays_to_goal(self):
         for path in STAGES:
             level = self.backend.load_level(str(path))
