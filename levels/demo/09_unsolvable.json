@@ -1,0 +1,7 @@
+{
+  "name": "09 - Unsolvable",
+  "description": "A one-cell gap the block can never cross: solvers must report no solution.",
+  "grid": [
+    "S###.##G"
+  ]
+}

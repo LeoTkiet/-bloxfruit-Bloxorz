@@ -1,0 +1,12 @@
+{
+  "name": "04 - Fragile tiles",
+  "description": "Orange tiles break if the block stands on them; lie across instead.",
+  "grid": [
+    "###.......",
+    "#S#.......",
+    "###FFFF###",
+    "###FFFF#G#",
+    ".......###"
+  ],
+  "expected_bfs_length": 18
+}
