@@ -36,7 +36,9 @@ The side panel holds New Game, Restart, Open..., the solver buttons (BFS, DFS,
 IDS, UCS, A*), the metrics of the last search and the replay controls. Every
 move, win check and replayed solution goes through the shared engine; the GUI
 has no rules of its own. The stage list shows `levels/basic`, then
-`levels/advanced`, then `levels/demo` (the stages used in the demo video).
+`levels/advanced`, `levels/split` (split switches), `levels/hard` (large
+benchmark stages, 35-46 moves) and `levels/demo` (the stages used in the demo
+video).
 Details, the 3D assets and integration notes are in
 [`docs/tv5_handoff.md`](docs/tv5_handoff.md).
 

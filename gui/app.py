@@ -16,7 +16,7 @@ from .backend import (BRIDGE, FLOOR, FRAGILE, GOAL, HEAVY, SOFT, SOLVER_LABELS, 
                       load_backend, stage_description, state_view)
 from .board_view import BoardView, Legend
 
-STAGE_GROUPS = ("basic", "advanced", "split", "demo")   # play order of the levels/ sub-folders
+STAGE_GROUPS = ("basic", "advanced", "split", "hard", "demo")   # play order of the levels/ sub-folders
 
 ORIENTATION_TEXT = {"STANDING": "Standing", "HORIZONTAL": "Lying horizontally",
                     "VERTICAL": "Lying vertically"}
