@@ -1,0 +1,21 @@
+{
+  "name": "Heavy Split Bridges",
+  "description": "Press the heavy switch before splitting: the reunited block needs bridge 1 and the soft switch for bridge 2.",
+  "grid": [
+    "S###..######........",
+    "####..###o##........",
+    "####..######........",
+    "####..######1122####",
+    "####..######1122##G#",
+    "#x##..######....###.",
+    "####..######.....#.."
+  ],
+  "switches": [
+    {"at": [5, 1], "mode": "permanent_open", "targets": [1]},
+    {"at": [1, 9], "mode": "toggle", "targets": [2]}
+  ],
+  "split_switches": [
+    {"position": [6, 3], "targets": [[0, 6], [6, 11]]}
+  ],
+  "expected_bfs_length": 33
+}
