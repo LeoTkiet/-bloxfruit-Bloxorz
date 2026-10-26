@@ -95,6 +95,29 @@ class BackendTest(unittest.TestCase):
         self.assertEqual(lengths["IDS"], lengths["BFS"])     # IDS is optimal for unit costs
         self.assertGreater(lengths["DFS"], lengths["BFS"])   # this stage leads DFS astray
 
+    def test_astar_button_uses_relaxed_heuristic(self):
+        astar = importlib.import_module("solvers.astar")
+        level = self.backend.load_level(str(LEVELS / "demo" / "03_classic_stage1.json"))
+        start = self.backend.initial_state(level)
+        guided = self.backend.solvers["A*"](level, start)
+        blind = astar.solve(level, start)   # h = 0, which expands like unit-cost UCS
+        geometric = astar.solve(level, start, heuristic=astar.astar_heuristic)
+        self.assertEqual(guided.solution_length, blind.solution_length)
+        self.assertLess(guided.expanded_nodes, geometric.expanded_nodes)
+        self.assertLess(geometric.expanded_nodes, blind.expanded_nodes)
+
+    def test_astar_button_stays_optimal_on_split_stages(self):
+        path = split_stage(self.backend)
+        if path is None:
+            self.skipTest("no split stage in levels/")
+        astar = importlib.import_module("solvers.astar")
+        level = self.backend.load_level(str(path))
+        start = self.backend.initial_state(level)
+        with mock.patch.object(astar, "solve", wraps=astar.solve) as solve:
+            guided = self.backend.solvers["A*"](level, start)
+        self.assertIs(solve.call_args.kwargs["heuristic"], astar.relaxed_heuristic)
+        self.assertEqual(guided.solution_length, astar.solve(level, start).solution_length)
+
     def test_missing_or_broken_solver_only_disables_its_button(self):
         real_import = importlib.import_module
 

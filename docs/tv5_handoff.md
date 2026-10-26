@@ -67,7 +67,7 @@ Các nút solver gọi `solve(level, level.initial_state)` theo hợp đồng ch
 | DFS | `solvers.dfs` | `strategy="dfs"` |
 | IDS | `solvers.dfs` | `strategy="ids"` |
 | UCS | `solvers.ucs` | – |
-| A\* | `solvers.astar` | – |
+| A\* | `solvers.astar` | `heuristic=relaxed_heuristic` |
 
 Module chưa có thì nút bị khóa và khung Solvers ghi *not merged yet*. Module có nhưng
 import lỗi thì chỉ nút đó bị khóa, khung Solvers hiện lỗi, GUI vẫn chạy bình thường.
@@ -80,9 +80,11 @@ import lỗi thì chỉ nút đó bị khóa, khung Solvers hiện lỗi, GUI v�
   chứa công tắc tách. Lưu ý: `GameState` sắp xếp lại `cube_positions`, nên phần tử 0 không
   luôn là cùng một cube; bảng 3D vẽ phần tử 0 là phần đầu, nên khi hai cube đổi thứ tự thì
   đầu và chân có thể đổi chỗ trên màn hình. Cần thống nhất cách giữ thứ tự cube khi merge.
-- **TV4 (A\*):** GUI gọi `solve(level, initial_state)` không truyền heuristic, nên
-  `solve` cần tự chọn heuristic (ví dụ hình học khi màn không có công tắc tách, `h = 0` khi
-  có), nếu không nút A\* sẽ chạy như UCS chi phí đơn vị.
+- **TV4 (A\*):** nút A\* truyền `relaxed_heuristic` (`_astar_solver` trong
+  `gui/backend.py`): số lần lăn ít nhất tới đích trên bàn nới lỏng (mọi cầu mở, bỏ luật
+  fragile), coi công tắc tách cũng là đích nên vẫn chấp nhận được trên màn split. Lập luận
+  và số đo nằm trong `docs/report_astar_experiments_vi.md`. `solve` và lệnh
+  `python -m solvers.astar` vẫn mặc định `h = 0`; thêm `--relaxed-heuristic` để dùng heuristic mới.
 
 ## Màn demo (`levels/demo/`)
 
