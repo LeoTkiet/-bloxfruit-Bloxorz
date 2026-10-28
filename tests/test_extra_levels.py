@@ -1,4 +1,4 @@
-"""Regression tests for the split and hard benchmark stages."""
+"""Regression tests for the split, hard and demo stages."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from solvers.bfs import solve
 LEVELS = Path(__file__).resolve().parents[1] / "levels"
 SPLIT_STAGES = sorted((LEVELS / "split").glob("*.json"))
 HARD_STAGES = sorted((LEVELS / "hard").glob("*.json"))
+DEMO_STAGES = sorted((LEVELS / "demo").glob("*.json"))
 
 
 class ExtraLevelRegressionTests(unittest.TestCase):
@@ -25,6 +26,7 @@ class ExtraLevelRegressionTests(unittest.TestCase):
     def test_stage_counts(self) -> None:
         self.assertEqual(len(SPLIT_STAGES), 4)
         self.assertEqual(len(HARD_STAGES), 4)
+        self.assertEqual(len(DEMO_STAGES), 7)
 
     def test_bfs_lengths_match_the_documented_values(self) -> None:
         for path, (_, result) in self.results.items():
@@ -64,6 +66,40 @@ class ExtraLevelRegressionTests(unittest.TestCase):
             with self.subTest(level=path.name):
                 replayed = replay(level, level.initial_state, result.moves)
                 self.assertTrue(is_goal(level, replayed[-1]))
+
+
+class DemoStageTests(unittest.TestCase):
+    """The stages used in the demo video keep the lengths written in their files."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.results = {path.stem: (load_level(path), solve(load_level(path)),
+                                   json.loads(path.read_text(encoding="utf-8")))
+                       for path in DEMO_STAGES}
+
+    def test_bfs_lengths_match_the_documented_values(self) -> None:
+        for name, (_, result, data) in self.results.items():
+            with self.subTest(level=name):
+                expected = data.get("expected_bfs_length")
+                if expected is None:
+                    self.assertFalse(result.found)
+                else:
+                    self.assertTrue(result.found)
+                    self.assertEqual(result.solution_length, expected)
+
+    def test_split_demo_needs_a_cube_on_the_soft_switch(self) -> None:
+        level, result, _ = self.results["07_split"]
+        pairs = list(zip(result.states, result.states[1:]))
+        self.assertTrue(any(a.is_split and b.is_split and a.bridge_mask != b.bridge_mask
+                            for a, b in pairs), "a lone cube should open the bridge")
+        self.assertTrue(is_goal(level, replay(level, level.initial_state, result.moves)[-1]))
+
+    def test_showcase_has_every_tile_kind(self) -> None:
+        level, result, _ = self.results["08_showcase"]
+        kinds = {switch.kind.value for switch in level.tiles.switches.values()}
+        self.assertEqual(kinds, {"soft", "heavy"})
+        self.assertTrue(level.tiles.fragile and level.tiles.bridge_cells and level.split_switches)
+        self.assertIn(True, [state.is_split for state in result.states])
 
 
 if __name__ == "__main__":

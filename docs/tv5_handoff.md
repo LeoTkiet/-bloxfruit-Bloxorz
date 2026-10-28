@@ -12,7 +12,7 @@
   - `theme.py`: màu và font.
 - `assets/models/`: 11 model `.obj` + `palette.mtl`, sinh bằng `python tools/build_models.py`.
 - `levels/demo/`: các màn dùng để quay video demo (xem mục cuối).
-- `tests/test_gui.py`, `tests/test_board3d.py`: 21 test cho GUI.
+- `tests/test_gui.py`, `tests/test_board3d.py`: 25 test cho GUI.
 
 ## Giao diện
 
@@ -77,9 +77,12 @@ import lỗi thì chỉ nút đó bị khóa, khung Solvers hiện lỗi, GUI v�
 - **TV3 (split):** GUI đã đọc sẵn `level.split_switches` (cặp `(ô công tắc, (đích 1, đích 2))`),
   `Action.SWITCH` (phím Space) và `is_split` / `cube_positions` / `active_cube`. Hai test
   split trong `tests/test_gui.py` và `tests/test_board3d.py` tự chạy khi `levels/` có màn
-  chứa công tắc tách. Lưu ý: `GameState` sắp xếp lại `cube_positions`, nên phần tử 0 không
-  luôn là cùng một cube; bảng 3D vẽ phần tử 0 là phần đầu, nên khi hai cube đổi thứ tự thì
-  đầu và chân có thể đổi chỗ trên màn hình. Cần thống nhất cách giữ thứ tự cube khi merge.
+  chứa công tắc tách. `GameState` sắp xếp lại `cube_positions` (để hai trạng thái
+  giống nhau băm giống nhau), nên phần tử 0 không luôn là cùng một cube. Engine giữ nguyên quy
+  ước này; GUI dùng `keep_piece_order` trong `gui/backend.py`: cube không di chuyển giữ nguyên
+  vị trí của nó, nên phần đầu và phần chân không đổi chỗ trên màn hình (`app.py` đưa mọi
+  trạng thái qua `App._state_view`). Cube đơn đi được trên cầu đang mở và nhấn được công tắc mềm
+  (xem `docs/tv3_handoff.md`, mục 2b).
 - **TV4 (A\*):** nút A\* truyền `relaxed_heuristic` (`_astar_solver` trong
   `gui/backend.py`): số lần lăn ít nhất tới đích trên bàn nới lỏng (mọi cầu mở, bỏ luật
   fragile), coi công tắc tách cũng là đích nên vẫn chấp nhận được trên màn split. Lập luận
@@ -98,11 +101,12 @@ nội dung.
 | `04_fragile` | Băng mỏng: phải nằm để đi qua | 18 |
 | `05_soft_switch_bridge` | Công tắc mềm mở cầu | 7 |
 | `06_heavy_switch` | Công tắc nặng mở cầu vĩnh viễn | 18 |
-| `08_showcase` | Băng mỏng + công tắc mềm + công tắc nặng | 24 |
+| `07_split` | Tách khối; một cube nhấn công tắc mềm mở cầu; ghép lại rồi về đích | 18 |
+| `08_showcase` | Mọi loại ô: băng mỏng, công tắc mềm, công tắc nặng, công tắc tách (đường tắt qua băng) | 23 |
 | `09_unsolvable` | Khe trống không qua được | vô nghiệm |
 
-`08_showcase` tạm bỏ công tắc tách và màn `07_split` chưa được chuyển; hai màn này sẽ
-thêm lại khi phần split của TV3 được merge.
+`07_split` và công tắc tách của `08_showcase` được thêm lại ngày 28/10, sau khi sửa luật cube
+đơn trong `engine/split.py`. Có công tắc tách, `08_showcase` ngắn hơn bản cũ một nước (24 → 23).
 
 ## Asset 3D
 

@@ -1,6 +1,6 @@
 {
   "name": "08 - Showcase",
-  "description": "Fragile ice, a soft switch and a heavy switch, each opening its own bridge.",
+  "description": "Every tile type: fragile ice, a soft and a heavy switch opening their own bridges, and a split switch that is a shortcut past the ice.",
   "grid": [
     "##o#...........",
     "#S##11###......",
@@ -14,5 +14,8 @@
     {"at": [0, 2], "mode": "toggle", "targets": [1]},
     {"at": [6, 7], "mode": "permanent_open", "targets": [2]}
   ],
-  "expected_bfs_length": 24
+  "split_switches": [
+    {"position": [1, 8], "targets": [[5, 6], [6, 8]]}
+  ],
+  "expected_bfs_length": 23
 }

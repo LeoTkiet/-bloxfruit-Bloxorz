@@ -1,0 +1,22 @@
+{
+  "name": "07 - Split and merge",
+  "description": "Stand on the split switch, send one cube onto the soft switch to open the bridge, then walk the cubes together to merge.",
+  "grid": [
+    "###..........",
+    "#S###........",
+    "###..........",
+    ".............",
+    ".###########.",
+    ".o...11......",
+    ".....##......",
+    ".....##G.....",
+    ".....###....."
+  ],
+  "switches": [
+    {"at": [5, 1], "mode": "toggle", "targets": [1]}
+  ],
+  "split_switches": [
+    {"position": [1, 4], "targets": [[4, 1], [4, 11]]}
+  ],
+  "expected_bfs_length": 18
+}
