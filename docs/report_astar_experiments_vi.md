@@ -3,6 +3,9 @@
 > Bản nháp để ghép vào Report.pdf (mục 3.5 A\* và mục Experiments). Mọi số liệu lấy từ
 > `docs/experiments/results.csv`, sinh lại được bằng `python tools/benchmark.py`. Biểu đồ
 > tương tác: https://claude.ai/artifact/Wb94bZ2wbgu8ce6jRotYme (chụp lại để đưa vào PDF).
+> Đo lại toàn bộ ngày 28/10 sau khi sửa luật cube đơn (`split/04`: 33 → 29 nước), thêm
+> `demo/07_split` và công tắc tách của `demo/08_showcase`. Biểu đồ trên vẫn dùng số đo ngày
+> 26/10, cần dựng lại từ CSV mới.
 
 ## 1. Bài toán tìm kiếm
 
@@ -12,7 +15,8 @@
 - **Hành động:** Up, Down, Left, Right; thêm Switch (đổi cube) khi khối đã tách.
 - **Mô hình chuyển:** lăn theo bảng chuyển tư thế, kiểm tra ô đỡ (sàn hoặc cầu đang mở,
   không đứng trên fragile), kích hoạt công tắc tại vị trí đáp, kiểm tra lại theo mask mới;
-  đứng trên split switch thì khối tách thành hai cube đặt tại hai ô đích.
+  đứng trên split switch thì khối tách thành hai cube đặt tại hai ô đích. Cube đơn đi trên sàn,
+  fragile và cầu đang mở, nhấn soft switch nhưng không nhấn heavy/split switch.
 - **Đích:** khối nguyên **đứng** trên ô goal.
 - **Chi phí:** mỗi nước đi tốn 1 (BFS, DFS/IDS, A\*). UCS dùng hàm chi phí của TV3: lăn 1,0,
   đổi cube 0,5, kích split switch 1,5.
@@ -91,10 +95,10 @@ Ngoài lập luận trên, `tests/test_astar.py` duyệt **toàn bộ** trạng 
 - không trạng thái nào có `hR` lớn hơn chi phí thật (chấp nhận được);
 - không cạnh nào vi phạm `hR(s) ≤ c + hR(s′)` (nhất quán);
 - `hR ≥ hG` trên mọi trạng thái tới được đích của màn không có split switch;
-- A\* với `hR` cho lời giải dài bằng BFS trên cả 33 màn.
+- A\* với `hR` cho lời giải dài bằng BFS trên cả 34 màn.
 
-Lần kiểm tra thủ công trên cả 33 màn (gồm ba màn split lớn, tổng hơn 21 000 trạng thái) cũng
-cho 0 vi phạm.
+Lần kiểm tra thủ công ngày 28/10 trên cả 34 màn (gồm ba màn split lớn, tổng 32 829 trạng
+thái tới được, theo luật cube đơn mới) cũng cho 0 vi phạm cả ba tính chất.
 
 ## 3. Thực nghiệm
 
@@ -106,10 +110,10 @@ Mọi thuật toán chạy trên cùng các file trong `levels/`, chia theo đ�
 | --- | ---: | --- | --- | --- |
 | `basic` | 10 | chỉ sàn, ô trống, goal (1 màn vô nghiệm) | 1×4 – 6×6 | 2 – 6 |
 | `advanced` | 9 | fragile; soft/heavy switch; toggle và permanent (2 màn vô nghiệm) | tới 10×5 | 4 – 13 |
-| `split` | 4 | split switch, tách và nhập lại; kết hợp fragile, heavy, soft và cầu | tới 20×7 | 4 – 33 |
+| `split` | 4 | split switch, tách và nhập lại; kết hợp fragile, heavy, soft và cầu | tới 20×7 | 4 – 31 |
 | `hard` | 4 | bàn lớn: mê cung, dải fragile, mạng 4 cầu / 3 công tắc, màn tổng hợp | 16×11 – 20×12 | 35 – 46 |
 
-Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có trong CSV nhưng không
+Bảy màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có trong CSV nhưng không
 đưa vào các bảng tổng hợp vì trùng ý tưởng với `basic`/`advanced`.
 
 ### 3.2 Cách đo
@@ -120,7 +124,10 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
   **Nút mở rộng:** số trạng thái được lấy ra và sinh con. **Độ dài lời giải:** số nước đi.
 - Hàm chi phí: đơn vị cho BFS, DFS/IDS, A\*; hàm chi phí mặc định của TV3 cho UCS.
 - A\* chạy với ba heuristic `h0`, `hG`, `hR`; `hG` bỏ qua trên màn split vì không chấp nhận được.
-- Lệnh tái tạo: `python tools/benchmark.py` → `docs/experiments/results.csv` (227 dòng).
+- Lệnh tái tạo: `python tools/benchmark.py` → `docs/experiments/results.csv` (232 dòng).
+- Số đo ngày 28/10 chạy một lượt khi máy chạy chậm hơn lần đo 26/10 (khoảng 1,5 lần ở đa số
+  màn). Chạy lại cùng một màn, thời gian dao động tới khoảng ±50 %, nên chỉ so sánh thời gian
+  khi chênh lệch lớn. Số nút mở rộng và độ dài lời giải không phụ thuộc máy.
 
 ### 3.3 Kết quả tổng hợp theo nhóm
 
@@ -130,17 +137,17 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | basic | 176 | 191 | 224 | 176 | 176 | 104 | 48 |
 | advanced | 264 | 213 | 724 | 264 | 264 | 188 | 97 |
-| split | 15 066 | 4 361 | 514 465 | 15 146 | 15 066 | – | 14 798 |
+| split | 19 266 | 5 943 | 484 016 | 19 432 | 19 266 | – | 19 089 |
 | hard | 3 520 | 3 031 | 608 613 | 3 520 | 3 520 | 2 844 | 1 812 |
 
 **Tổng thời gian tìm kiếm (ms)**
 
 | Nhóm | BFS | DFS | IDS | UCS | A\* h0 | A\* hG | A\* hR |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| basic | 11.0 | 11.8 | 14.3 | 11.1 | 11.6 | 7.23 | 3.65 |
-| advanced | 17.5 | 16.5 | 54.7 | 19.4 | 21.3 | 15.0 | 7.80 |
-| split | 604 | 220 | 24 447 | 813 | 797 | – | 765 |
-| hard | 268 | 257 | 48 253 | 300 | 321 | 253 | 193 |
+| basic | 15.4 | 16.2 | 21.7 | 16.2 | 18.3 | 9.85 | 7.33 |
+| advanced | 28.6 | 21.2 | 71.8 | 29.2 | 30.3 | 20.0 | 14.1 |
+| split | 3 781 | 1 362 | 111 345 | 5 427 | 5 371 | – | 5 122 |
+| hard | 441 | 406 | 97 840 | 511 | 509 | 358 | 237 |
 
 **Bộ nhớ đỉnh lớn nhất trong nhóm (KiB)**
 
@@ -148,8 +155,8 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | basic | 16.4 | 30.7 | 8.50 | 11.3 | 11.6 | 9.70 | 15.0 |
 | advanced | 18.9 | 45.3 | 15.9 | 21.7 | 22.7 | 18.5 | 12.1 |
-| split | 1 382 | 1 834 | 1 224 | 2 169 | 1 872 | – | 1 853 |
-| hard | 254 | 637 | 219 | 350 | 352 | 252 | 210 |
+| split | 1 732 | 2 819 | 1 529 | 2 603 | 2 263 | – | 2 272 |
+| hard | 254 | 690 | 219 | 352 | 357 | 205 | 211 |
 
 **Tổng độ dài lời giải (các màn giải được)**
 
@@ -157,26 +164,26 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | basic | 35 | 140 | 35 | 35 | 35 | 35 | 35 |
 | advanced | 49 | 158 | 49 | 49 | 49 | 49 | 49 |
-| split | 99 | 2 108 | 99 | 99 | 99 | – | 99 |
+| split | 95 | 2 110 | 95 | 95 | 95 | – | 95 |
 | hard | 163 | 1 485 | 163 | 163 | 163 | 163 | 163 |
 
 **Chi tiết nhóm `split`: số nút mở rộng / độ dài lời giải / thời gian (ms)**
 
 | Màn | BFS | DFS | IDS | UCS | A\* h0 | A\* hG | A\* hR |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 01_split_intro | 6 / 4 / 0.28 | 5 / 4 / 0.24 | 10 / 4 / 0.50 | 8 / 4 / 0.38 | 6 / 4 / 0.36 | – | 7 / 4 / 0.71 |
-| 02_split_reunion | 4 857 / 31 / 180 | 1 984 / 1629 / 89.2 | 107 147 / 31 / 4 123 | 4 864 / 31 / 245 | 4 857 / 31 / 238 | – | 4 873 / 31 / 230 |
-| 03_fragile_split | 6 401 / 31 / 252 | 244 / 223 / 12.0 | 108 653 / 31 / 4 251 | 6 477 / 31 / 331 | 6 401 / 31 / 333 | – | 6 337 / 31 / 322 |
-| 04_heavy_split_bridges | 3 802 / 33 / 172 | 2 128 / 252 / 118 | 298 655 / 33 / 16 073 | 3 797 / 33 / 237 | 3 802 / 33 / 225 | – | 3 581 / 33 / 213 |
+| 01_split_intro | 6 / 4 / 0.47 | 5 / 4 / 0.41 | 10 / 4 / 0.70 | 8 / 4 / 0.91 | 6 / 4 / 0.51 | – | 7 / 4 / 0.66 |
+| 02_split_reunion | 4 857 / 31 / 366 | 1 984 / 1629 / 164 | 107 147 / 31 / 22 307 | 4 864 / 31 / 1 255 | 4 857 / 31 / 1 332 | – | 4 873 / 31 / 1 233 |
+| 03_fragile_split | 6 401 / 31 / 1 640 | 244 / 223 / 69.4 | 108 653 / 31 / 23 096 | 6 477 / 31 / 1 669 | 6 401 / 31 / 1 707 | – | 6 337 / 31 / 1 713 |
+| 04_heavy_split_bridges | 8 002 / 29 / 1 774 | 3 710 / 254 / 1 128 | 268 206 / 29 / 65 941 | 8 083 / 29 / 2 502 | 8 002 / 29 / 2 332 | – | 7 872 / 29 / 2 176 |
 
 **Chi tiết nhóm `hard`: số nút mở rộng / độ dài lời giải / thời gian (ms)**
 
 | Màn | BFS | DFS | IDS | UCS | A\* h0 | A\* hG | A\* hR |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 01_grand_maze | 402 / 35 / 23.9 | 369 / 126 / 24.0 | 42 525 / 35 / 2 863 | 402 / 35 / 29.0 | 402 / 35 / 28.8 | 396 / 35 / 30.3 | 43 / 35 / 4.30 |
-| 02_fragile_bands | 361 / 37 / 25.9 | 288 / 181 / 21.7 | 19 757 / 37 / 1 448 | 361 / 37 / 26.9 | 361 / 37 / 29.2 | 300 / 37 / 24.3 | 207 / 37 / 17.7 |
-| 03_switch_network | 1 477 / 45 / 116 | 1 454 / 701 / 125 | 268 560 / 45 / 21 649 | 1 477 / 45 / 132 | 1 477 / 45 / 139 | 1 132 / 45 / 103 | 763 / 45 / 68.8 |
-| 04_grand_finale | 1 280 / 46 / 102 | 920 / 477 / 85.9 | 277 771 / 46 / 22 294 | 1 280 / 46 / 111 | 1 280 / 46 / 123 | 1 016 / 46 / 95.4 | 799 / 46 / 103 |
+| 01_grand_maze | 402 / 35 / 94.8 | 369 / 126 / 100 | 42 525 / 35 / 10 488 | 402 / 35 / 117 | 402 / 35 / 120 | 396 / 35 / 55.2 | 43 / 35 / 6.11 |
+| 02_fragile_bands | 361 / 37 / 34.1 | 288 / 181 / 28.7 | 19 757 / 37 / 2 376 | 361 / 37 / 42.0 | 361 / 37 / 47.9 | 300 / 37 / 38.7 | 207 / 37 / 25.5 |
+| 03_switch_network | 1 477 / 45 / 163 | 1 454 / 701 / 169 | 268 560 / 45 / 55 278 | 1 477 / 45 / 197 | 1 477 / 45 / 191 | 1 132 / 45 / 147 | 763 / 45 / 101 |
+| 04_grand_finale | 1 280 / 46 / 149 | 920 / 477 / 109 | 277 771 / 46 / 29 698 | 1 280 / 46 / 155 | 1 280 / 46 / 150 | 1 016 / 46 / 117 | 799 / 46 / 105 |
 
 **So sánh heuristic: số nút A\* mở rộng (màn giải được, độ dài tối ưu ≥ 4)**
 
@@ -192,7 +199,7 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
 | advanced/07_advanced_mix | 13 | 106 | 65 | 25 | 62 % |
 | split/02_split_reunion | 31 | 4 857 | – | 4 873 | – |
 | split/03_fragile_split | 31 | 6 401 | – | 6 337 | – |
-| split/04_heavy_split_bridges | 33 | 3 802 | – | 3 581 | – |
+| split/04_heavy_split_bridges | 29 | 8 002 | – | 7 872 | – |
 | hard/01_grand_maze | 35 | 402 | 396 | 43 | 89 % |
 | hard/02_fragile_bands | 37 | 361 | 300 | 207 | 31 % |
 | hard/03_switch_network | 45 | 1 477 | 1 132 | 763 | 33 % |
@@ -201,28 +208,31 @@ Sáu màn `levels/demo/` dùng để quay video; số đo của chúng vẫn có
 | demo/04_fragile | 18 | 61 | 61 | 47 | 23 % |
 | demo/05_soft_switch_bridge | 7 | 35 | 13 | 11 | 15 % |
 | demo/06_heavy_switch | 18 | 80 | 62 | 30 | 52 % |
-| demo/08_showcase | 24 | 159 | 145 | 115 | 21 % |
+| demo/07_split | 18 | 514 | – | 531 | – |
+| demo/08_showcase | 23 | 943 | – | 908 | – |
 
 ## 4. Nhận xét
 
 **Tính tối ưu.** BFS, IDS, UCS và A\* với cả ba heuristic đều cho lời giải ngắn nhất trên mọi
 màn. DFS thì không: ở nhóm `hard` tổng độ dài lời giải của DFS là 1 485 nước so với 163 nước
-tối ưu (gấp khoảng 9 lần), ở nhóm `split` là 2 108 so với 99, riêng `split/02_split_reunion`
+tối ưu (gấp khoảng 9 lần), ở nhóm `split` là 2 110 so với 95, riêng `split/02_split_reunion`
 DFS đi 1 629 nước cho bài toán chỉ cần 31. DFS đôi khi mở rộng ít nút hơn BFS (244 so với 6 401
 ở `split/03_fragile_split`) vì nó lao sâu và chạm đích sớm, nhưng đường tìm được không dùng được.
 
 **IDS** tối ưu như BFS và có bộ nhớ đỉnh thấp nhất trong bốn thuật toán không dùng heuristic
 (BFS, DFS, IDS, UCS) ở mọi nhóm, nhưng phải lặp lại cả cây ở mỗi
-độ sâu: nhóm `hard` mở rộng 608 613 nút (gấp khoảng 170 lần BFS) và mất khoảng 48 giây so với
-0,27 giây của BFS. Trên các bàn Bloxorz nhỏ như ở đây, BFS hiếm khi hết bộ nhớ, nên lợi thế bộ
+độ sâu: nhóm `hard` mở rộng 608 613 nút (gấp khoảng 170 lần BFS) và mất khoảng 98 giây so với
+0,44 giây của BFS. Trên các bàn Bloxorz nhỏ như ở đây, BFS hiếm khi hết bộ nhớ, nên lợi thế bộ
 nhớ của IDS không đáng với thời gian tăng thêm.
 
 **UCS** cho đúng số nút và độ dài như BFS ở `basic`, `advanced`, `hard`, vì hàm chi phí hiện tại
 chỉ khác 1 ở các bước liên quan tới tách khối (đổi cube 0,5, kích split switch 1,5); mọi phép
-lăn đều tốn 1,0 nên UCS suy biến thành BFS, đúng như đề bài cảnh báo. Do dùng hàng đợi ưu tiên
-nên UCS tốn thời gian và bộ nhớ hơn BFS khoảng 10–60 %. Muốn UCS có ý nghĩa ở các màn không
-tách, cần thêm chi phí khác 1 cho phép lăn, ví dụ lăn lên ô fragile đắt hơn
-(`docs/tv3_handoff.md` có ghi 1,5 nhưng `solvers/ucs.py` chưa cài).
+lăn đều tốn 1,0 nên UCS suy biến thành BFS, đúng như đề bài cảnh báo. Do dùng hàng đợi ưu tiên,
+tổng thời gian của UCS cao hơn BFS 2–16 % ở ba nhóm không tách và 44 % ở nhóm `split`; bộ nhớ
+đỉnh cao hơn 15–50 % ở `advanced`, `split`, `hard`. Muốn UCS có ý nghĩa ở các màn không
+tách, cần thêm chi phí khác 1 cho phép lăn, ví dụ lăn lên ô fragile đắt hơn (bản đầu của
+`docs/tv3_handoff.md` có ghi 1,5 nhưng `solvers/ucs.py` chưa bao giờ cài; tài liệu đã sửa cho
+khớp code).
 
 **A\* và heuristic.**
 
@@ -233,17 +243,18 @@ tách, cần thêm chi phí khác 1 cho phép lăn, ví dụ lăn lên ô fragil
 - `hR` giảm tiếp 15–89 % so với `hG` trên mọi màn không tách mà A\* phải mở rộng từ 10 nút trở
   lên (các màn nhỏ hơn thì ba heuristic như nhau). Tổng nhóm `hard`:
   3 520 (BFS) → 2 844 (`hG`) → 1 812 (`hR`), tức ít hơn BFS 49 %. Tổng nhóm `basic`:
-  176 → 104 → 48. `hard/01_grand_maze` giảm mạnh nhất (402 → 43 nút, 24 ms → 4 ms) vì bàn
+  176 → 104 → 48. `hard/01_grand_maze` giảm mạnh nhất (402 → 43 nút, 95 ms → 6 ms) vì bàn
   nới lỏng vẫn giữ ô trống, nên `hR` biết đường vòng của mê cung. `hard/04_grand_finale` giảm ít
   hơn (21 %) vì phần khó nằm ở thứ tự bấm công tắc, thứ mà `hR` cố ý bỏ qua.
 - Thời gian không giảm theo đúng tỉ lệ số nút: mỗi nút A\* tốn thêm thao tác heap và tra
   bảng, cộng chi phí dựng bảng `hR` một lần cho mỗi màn. Trên `hard/04` A\* `hR` mở rộng ít hơn
-  BFS 38 % nhưng thời gian ngang BFS (103 ms so với 102 ms). Trên màn rất nhỏ, bảng `hR` làm bộ
+  BFS 38 % nhưng thời gian chỉ giảm khoảng 30 % (105 ms so với 149 ms; lần đo 26/10 hai số này
+  ngang nhau). Trên màn rất nhỏ, bảng `hR` làm bộ
   nhớ đỉnh nhích lên vài KiB.
 
 **Màn split làm không gian trạng thái bùng nổ.** Sau khi tách, trạng thái là một *cặp* vị trí
 cube, nên bàn 12×8 của `split/02_split_reunion` đã có gần 5 000 trạng thái, nhiều hơn bàn 20×12
-của `hard/04`. Heuristic giúp rất ít ở nhóm này: `hR` bớt tối đa 6 % (`split/04`), còn ở
+của `hard/04`. Heuristic giúp rất ít ở nhóm này: `hR` bớt tối đa 1,6 % (`split/04`), còn ở
 `split/02` lại mở rộng nhiều hơn `h0` 0,3 % do cách phá thế hòa. Lý do là phần lớn trạng thái
 là trạng thái đã tách, nơi `hR = 0`. Một heuristic chấp nhận được cho trạng thái đã tách (ví dụ
 dựa trên số bước để hai cube kề nhau rồi khoảng cách `hR` từ chỗ nhập) là hướng cải thiện tiếp.
@@ -256,4 +267,4 @@ dựa trên số bước để hai cube kề nhau rồi khoảng cách `hR` từ
 - `gui/backend.py`: nút A\* truyền `relaxed_heuristic` trên mọi màn (trước đây là `h0`).
 - `tools/benchmark.py`: khung thực nghiệm chạy 7 cấu hình solver trên mọi màn, ghi CSV.
 - `tests/test_astar.py`, `tests/test_gui.py`: kiểm tra `hR` chấp nhận được, nhất quán, trội hơn
-  `hG`, và A\* `hR` cho lời giải tối ưu trên cả 33 màn.
+  `hG`, và A\* `hR` cho lời giải tối ưu trên cả 34 màn.
