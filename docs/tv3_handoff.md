@@ -27,9 +27,11 @@ TV3 owns the split-block mechanics (block splitting, individual unit-cube naviga
   - CLI runner matching standard interface: `python -m solvers.ucs <level_file> [--unit-cost]`.
 - Stage assets & Tests:
   - `levels/split/01_split_intro.json`: Benchmark stage featuring split switch teleportation, split navigation, and merge.
-  - `tests/test_split.py`: 7 unit tests covering split teleportation, cube switching, movement, collisions, and merge mechanics.
-  - `tests/test_ucs.py`: 10 unit tests verifying correctness, optimality, BFS parity under unit cost, and non-uniform cost path selection.
-  - Project-wide test suite passes completely (128/128 tests passing).
+  - `levels/demo/07_split.json`: demo stage where one cube opens the bridge on a soft switch before the merge (BFS 18).
+  - `tests/test_split.py`: 21 unit tests covering split teleportation, cube switching, movement, collisions, merge mechanics,
+    cubes with bridges and soft/heavy/permanent switches and fragile tiles, and UCS optimality under the published cost model.
+  - `tests/test_ucs.py`: 7 unit tests verifying correctness, optimality, BFS parity under unit cost, and non-uniform cost path selection.
+  - Project-wide test suite passes completely (188/188 tests passing on 2026-10-28).
 
 ---
 
@@ -57,14 +59,35 @@ SPLIT_ACTION_ORDER = (
 - Directional actions: Move only the cube indexed by `active_cube` by 1 cell. The other cube remains stationary.
 - Illegal moves (return `None`):
   - Stepping outside the board (`not level.contains(pos)`).
-  - Stepping onto void or unsupported cell (`pos not in level.floor_tiles` and not an open bridge).
+  - Stepping onto void or a closed bridge (`level.tiles.is_cell_supported` is false under the current `bridge_mask`).
   - Stepping onto the exact same cell as the other cube (`next_pos == other_pos`).
+  - Pressing a soft switch that closes a bridge under either cube (that cube falls).
+
+### 2b. Unit Cubes and Advanced Tiles
+A unit cube is light. After each cube move, `try_move_split` applies the same trigger rule as TV2's
+intact block, with `standing=False`:
+
+| Tile | Unit cube |
+|---|---|
+| Floor, fragile (`F`) | Supported. Fragile only breaks under a standing intact block. |
+| Bridge (`1`-`9`) | Supported only while its bit is set in `bridge_mask`. |
+| Soft switch (`o`) | Fires once when the cube lands on it (`toggle`, `permanent_open`, `permanent_close`). |
+| Heavy switch (`x`) | Ignored: only an intact standing block presses it. |
+| Split switch | Ignored: only an intact standing block triggers it. |
+| Goal | A cube on the goal does not win. |
+
+If the switch closes a bridge under the moving cube or the waiting cube, the move is illegal, the
+same rule as an intact block falling through a bridge it just closed. The new mask is carried into
+the next split state, or into the merged block.
+
+These two rules (cubes on open bridges, cubes pressing soft switches) were added on 2026-10-28;
+before that, cubes treated every bridge as void and never pressed a switch.
 
 ### 3. Automatic Merging
 After every unit-cube move, `check_merge(cube1, cube2)` checks whether the two cubes are orthogonally adjacent (Manhattan distance = 1):
 - **Horizontal merge**: `r1 == r2` and `abs(c1 - c2) == 1` $\rightarrow$ merges into an intact horizontal block with anchor `(r1, min(c1, c2))`.
 - **Vertical merge**: `c1 == c2` and `abs(r1 - r2) == 1` $\rightarrow$ merges into an intact vertical block with anchor `(min(r1, r2), c1)`.
-- The merged state preserves the current `bridge_mask`.
+- The merged state keeps the `bridge_mask` produced by the move that merged it (the moving cube may just have pressed a soft switch).
 
 ### 4. Split Switches (Teleportation)
 - **Grid symbol / JSON declaration**: Declared under `"split_switches"` in JSON levels:
@@ -103,7 +126,8 @@ UCS is implemented from scratch in `solvers/ucs.py` using Python's `heapq`:
      - Standard directional movement: `1.0`
      - Switching active cube (`Action.SWITCH`): `0.5` (mental focus change, no physical block shift)
      - Split switch trigger / teleportation: `1.5` (energy cost of dissociation)
-     - Fragile tile movement / risky placement: `1.5`
+     - Every other move, including unit-cube moves and fragile tiles: `1.0`
+       (an earlier draft of this note also listed a fragile cost of `1.5`; `default_cost_function` never had it)
    - **Unit Cost (`--unit-cost`)**:
      - Every action has cost `1.0`. Under unit cost, UCS produces solutions of identical length to BFS across all 10 basic levels and 9 advanced levels.
 
@@ -131,7 +155,7 @@ To run the complete test suite:
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
 ```
-**Result**: 128 tests ran successfully (TV1 core: 38, TV2 tiles & DFS: 73, TV3 split & UCS: 17).
+**Result** (2026-10-28): 188 tests ran successfully, 28 of them TV3's (split & merge: 21, UCS: 7). At handoff time the suite had 128 tests.
 
 To execute UCS directly on sample levels:
 ```powershell
@@ -157,4 +181,8 @@ python -m solvers.ucs levels/split/01_split_intro.json --unit-cost
   - Check `state.is_split`:
     - If `False`: Render intact block using `state.position` and `state.orientation`.
     - If `True`: Render two $1 \times 1 \times 1$ cubes at `state.cube_positions[0]` and `state.cube_positions[1]`. Highlight the active cube corresponding to `state.active_cube`.
+  - Cube order: `GameState` keeps `cube_positions` sorted so that equal states hash alike, so element `0`
+    is not always the same physical cube after a move. The engine keeps this canonical order (it is part
+    of the search state). The GUI keeps each piece in its slot with `gui.backend.keep_piece_order`: the
+    cube that did not move keeps its slot, so Buggy's head and legs never swap on screen.
   - Key bindings: Support arrow keys for movement, and spacebar or tab for `Action.SWITCH`.
