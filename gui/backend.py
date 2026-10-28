@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import importlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -157,6 +157,25 @@ def state_view(level: engine.Level, state: engine.GameState) -> StateView:
     if state.is_split:
         return StateView(SPLIT, tuple(state.cube_positions), state.active_cube, open_bridges)
     return StateView(state.orientation.name, engine.occupied_cells(state), 0, open_bridges)
+
+
+def keep_piece_order(previous: StateView | None, view: StateView) -> StateView:
+    """Keep each split piece in its slot from one view to the next (slot 0 is Buggy's head).
+
+    GameState sorts cube_positions so that equal states hash alike; after a move the cube that
+    was element 0 can become element 1. The cube that did not move keeps its slot here, so the
+    head and the legs never swap places on screen.
+    """
+    if previous is None or previous.orientation != SPLIT or view.orientation != SPLIT:
+        return view
+    swapped = view.cells[::-1]
+
+    def kept(cells) -> int:
+        return sum(old == new for old, new in zip(previous.cells, cells))
+
+    if kept(swapped) > kept(view.cells):
+        return replace(view, cells=swapped, active=1 - view.active)
+    return view
 
 
 @dataclass

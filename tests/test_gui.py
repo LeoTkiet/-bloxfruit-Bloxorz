@@ -13,7 +13,8 @@ sys.path.insert(0, str(ROOT))
 from gui import backend as gui_backend  # noqa: E402
 from gui.app import App, find_stages  # noqa: E402
 from gui.backend import (BRIDGE, FLOOR, FRAGILE, GOAL, SOLVER_LABELS, SPLIT, SPLIT_SWITCH,  # noqa: E402
-                         VOID, StateView, action_key, level_view, load_backend, state_view)
+                         VOID, StateView, action_key, keep_piece_order, level_view,
+                         load_backend, state_view)
 
 LEVELS = ROOT / "levels"
 STAGES = find_stages(LEVELS)
@@ -86,6 +87,24 @@ class BackendTest(unittest.TestCase):
         for view in views:
             self.assertEqual(len(view.cells), 1 if view.orientation == "STANDING" else 2)
         self.assertIn(frozenset(level.tiles.bridge_cells), {v.open_bridges for v in views})
+
+    def test_split_pieces_keep_their_slots_when_the_engine_reorders_cubes(self):
+        level = self.backend.load_level(str(LEVELS / "demo" / "07_split.json"))
+        result = self.backend.solvers["BFS"](level, self.backend.initial_state(level))
+        engine_views = [state_view(level, s) for s in result.states]
+        views, previous = [], None
+        for view in engine_views:
+            previous = keep_piece_order(previous, view)
+            views.append(previous)
+        reordered = 0
+        for before, after, raw in zip(views, views[1:], engine_views[1:]):
+            if before.orientation == SPLIT and after.orientation == SPLIT:
+                reordered += after.cells != raw.cells
+                self.assertEqual(set(after.cells), set(raw.cells))
+                self.assertEqual(after.cells[after.active], raw.cells[raw.active])
+                # one piece moves per step (none on a switch): the other keeps its slot
+                self.assertGreaterEqual(sum(a == b for a, b in zip(before.cells, after.cells)), 1)
+        self.assertGreater(reordered, 0, "the stage should make the engine reorder the cubes")
 
     def test_dfs_and_ids_buttons_use_their_own_strategy(self):
         level = self.backend.load_level(str(LEVELS / "advanced" / "07_advanced_mix.json"))
