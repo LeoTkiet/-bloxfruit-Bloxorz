@@ -27,6 +27,7 @@ from engine.core import (
 from engine.level_loader import load_level
 
 from .common import ParentEntry, SolverResult, reconstruct_path
+from .ucs import default_cost_function
 
 
 Heuristic = Callable[[Level, GameState], float]
@@ -118,6 +119,97 @@ def relaxed_heuristic(level: Level, state: GameState) -> float:
     return float(_relaxed_distances(level).get((state.position, state.orientation), 0))
 
 
+_MERGE_CACHE: dict[int, tuple[Level, dict[Position, dict[Position, int]]]] = {}
+
+
+def _adjacent_cells(cell: Position) -> tuple[Position, ...]:
+    row, col = cell
+    return ((row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1))
+
+
+def _merge_costs(level: Level, cube: Position) -> dict[Position, int]:
+    """Relaxed cost left for a split pair with one cube on ``cube``, keyed by the other cube.
+
+    Each cube walks alone on the relaxed board of ``_relaxed_distances``. Every side-by-side
+    pair whose merged block can still reach a target is priced with this cube's walk to one
+    cell plus that block's distance, and a search outward from those seeds adds the other
+    cube's walk to the second cell. The table is built the first time a cube stands on ``cube``.
+    """
+
+    cached = _MERGE_CACHE.get(id(level))
+    if cached is None or cached[0] is not level:
+        if len(_MERGE_CACHE) >= 8:
+            _MERGE_CACHE.clear()
+        cached = _MERGE_CACHE[id(level)] = (level, {})
+    tables = cached[1]
+    if cube in tables:
+        return tables[cube]
+
+    supported = level.floor_tiles | frozenset(level.tiles.bridge_cells)
+    walk = {cube: 0}
+    queue = deque(walk)
+    while queue:
+        cell = queue.popleft()
+        for neighbour in _adjacent_cells(cell):
+            if neighbour in supported and neighbour not in walk:
+                walk[neighbour] = walk[cell] + 1
+                queue.append(neighbour)
+
+    blocks = _relaxed_distances(level)
+    frontier: list[tuple[int, Position]] = []
+    for anchor in supported:
+        row, col = anchor
+        for cell, orientation in (
+            ((row, col + 1), Orientation.HORIZONTAL),
+            ((row + 1, col), Orientation.VERTICAL),
+        ):
+            block = blocks.get((anchor, orientation))
+            if block is None:
+                continue
+            if cell in walk:
+                heappush(frontier, (walk[cell] + block, anchor))
+            if anchor in walk:
+                heappush(frontier, (walk[anchor] + block, cell))
+
+    costs: dict[Position, int] = {}
+    while frontier:
+        cost, cell = heappop(frontier)
+        if cell in costs:
+            continue
+        costs[cell] = cost
+        for neighbour in _adjacent_cells(cell):
+            if neighbour in supported and neighbour not in costs:
+                heappush(frontier, (cost + 1, neighbour))
+
+    tables[cube] = costs
+    return costs
+
+
+def split_heuristic(level: Level, state: GameState) -> float:
+    """``relaxed_heuristic`` that keeps estimating once the block has split.
+
+    The goal needs an intact block, so split cubes must first stand side by side. Every
+    real cube step is also legal on the relaxed board, and after the merge the block still
+    has its relaxed distance to go. The cheapest such plan never overestimates when each
+    cube step costs at least one, and leaving out the active-cube switches keeps that true
+    whatever a switch costs.
+
+    A state cut off from every target on the relaxed board cannot reach the goal on the real
+    board either, so any finite estimate is admissible for it. It gets one above every other
+    estimate, which keeps the heuristic consistent and leaves those states for last: a walk
+    is shorter than the cell count and a relaxed distance shorter than three times that.
+    """
+
+    if state.is_split:
+        cube, other = state.cube_positions
+        estimate = _merge_costs(level, cube).get(other)
+    else:
+        estimate = _relaxed_distances(level).get((state.position, state.orientation))
+    if estimate is None:
+        return 5.0 * (len(level.floor_tiles) + len(level.tiles.bridge_cells))
+    return float(estimate)
+
+
 def _validated_heuristic(heuristic: Heuristic, level: Level, state: GameState) -> float:
     estimate = heuristic(level, state)
     if not isinstance(estimate, Real) or isinstance(estimate, bool):
@@ -147,10 +239,10 @@ def solve(
 
     The default zero heuristic preserves optimality for arbitrary non-negative
     successor costs and transitions, including TV3's split/teleport rules.
-    Supply ``relaxed_heuristic`` for any level whose rolls cost at least one,
-    or ``astar_heuristic`` only for core-only levels where its geometric
-    lower-bound assumptions hold. If ``cost_fn`` is supplied, it overrides the
-    cost in each successor tuple.
+    Supply ``split_heuristic`` or ``relaxed_heuristic`` for any level whose
+    rolls cost at least one, or ``astar_heuristic`` only for core-only levels
+    where its geometric lower-bound assumptions hold. If ``cost_fn`` is
+    supplied, it overrides the cost in each successor tuple.
     """
 
     start_state = initial_state if initial_state is not None else level.initial_state
@@ -260,15 +352,28 @@ def main() -> int:
         action="store_true",
         help="Use the relaxed-board distance (admissible on every stage)",
     )
+    heuristic_group.add_argument(
+        "--split-heuristic",
+        action="store_true",
+        help="Use the relaxed-board distance and also estimate split cubes (admissible on every stage)",
+    )
+    parser.add_argument(
+        "--ucs-cost",
+        action="store_true",
+        help="Use the UCS cost model instead of 1.0 per action (the GUI's A* does)",
+    )
     arguments = parser.parse_args()
 
-    if arguments.relaxed_heuristic:
+    if arguments.split_heuristic:
+        heuristic = split_heuristic
+    elif arguments.relaxed_heuristic:
         heuristic = relaxed_heuristic
     elif arguments.core_geometric_heuristic:
         heuristic = astar_heuristic
     else:
         heuristic = zero_heuristic
-    result = solve(load_level(arguments.level), heuristic=heuristic)
+    cost_fn = default_cost_function if arguments.ucs_cost else None
+    result = solve(load_level(arguments.level), heuristic=heuristic, cost_fn=cost_fn)
     print(json.dumps(result.as_dict(), indent=2))
     return 0 if result.found else 1
 

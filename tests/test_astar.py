@@ -8,11 +8,20 @@ import unittest
 from unittest.mock import patch
 
 from collections import deque
+from heapq import heappop, heappush
+from itertools import count
 
 from engine.core import Action, GameState, Orientation, get_successors, is_goal, replay
 from engine.level_loader import load_level, parse_grid
-from solvers.astar import astar_heuristic, relaxed_heuristic, solve, zero_heuristic
+from solvers.astar import (
+    astar_heuristic,
+    relaxed_heuristic,
+    solve,
+    split_heuristic,
+    zero_heuristic,
+)
 from solvers.bfs import solve as solve_bfs
+from solvers.ucs import default_cost_function, solve as solve_ucs
 
 
 LEVEL_DIRECTORY = Path(__file__).resolve().parents[1] / "levels" / "basic"
@@ -20,6 +29,7 @@ ALL_STAGES = sorted((Path(__file__).resolve().parents[1] / "levels").glob("*/*.j
 SMALL_STAGES = [path for path in ALL_STAGES if path.parent.name != "split"] + sorted(
     (Path(__file__).resolve().parents[1] / "levels" / "split").glob("01_*.json")
 )
+SPLIT_STAGES = [path for path in ALL_STAGES if load_level(path).split_switches]
 
 
 def exact_costs_to_goal(level):
@@ -43,6 +53,34 @@ def exact_costs_to_goal(level):
             if previous not in costs:
                 costs[previous] = costs[state] + 1
                 queue.append(previous)
+    return seen, costs
+
+
+def exact_ucs_costs_to_goal(level):
+    """Least UCS cost to the goal for every state reachable from the start."""
+
+    seen = {level.initial_state}
+    queue = deque(seen)
+    predecessors: dict[GameState, list[tuple[GameState, float]]] = {}
+    while queue:
+        state = queue.popleft()
+        for action, next_state, _ in get_successors(level, state):
+            step = default_cost_function(level, state, action, next_state)
+            predecessors.setdefault(next_state, []).append((state, step))
+            if next_state not in seen:
+                seen.add(next_state)
+                queue.append(next_state)
+    ties = count()
+    frontier = [(0.0, next(ties), state) for state in seen if is_goal(level, state)]
+    costs: dict[GameState, float] = {}
+    while frontier:
+        cost, _, state = heappop(frontier)
+        if state in costs:
+            continue
+        costs[state] = cost
+        for previous, step in predecessors.get(state, ()):
+            if previous not in costs:
+                heappush(frontier, (cost + step, next(ties), previous))
     return seen, costs
 
 
@@ -266,6 +304,117 @@ class RelaxedHeuristicTests(unittest.TestCase):
                         guided.expanded_nodes,
                         solve(level, heuristic=astar_heuristic).expanded_nodes,
                     )
+
+    def test_relaxed_heuristic_stays_admissible_and_consistent_on_the_ucs_cost(self) -> None:
+        for path in SMALL_STAGES:
+            level = load_level(path)
+            seen, costs = exact_ucs_costs_to_goal(level)
+            with self.subTest(level=path.name):
+                for state in seen:
+                    estimate = relaxed_heuristic(level, state)
+                    if state in costs:
+                        self.assertLessEqual(estimate, costs[state])
+                    for action, next_state, _ in get_successors(level, state):
+                        step = default_cost_function(level, state, action, next_state)
+                        self.assertLessEqual(estimate, step + relaxed_heuristic(level, next_state))
+
+    def test_relaxed_astar_pays_what_ucs_pays_on_every_stage(self) -> None:
+        for path in ALL_STAGES:
+            level = load_level(path)
+            with self.subTest(level=path.name):
+                guided = solve(level, heuristic=relaxed_heuristic, cost_fn=default_cost_function)
+                uniform = solve_ucs(level)
+                self.assertEqual(guided.found, uniform.found)
+                self.assertEqual(guided.path_cost, uniform.path_cost)
+
+    def test_astar_opens_fewer_nodes_than_ucs_for_the_same_cost(self) -> None:
+        stages = ALL_STAGES[0].parents[1]
+        for name in ("advanced/02_fragile_band", "hard/01_grand_maze", "hard/02_fragile_bands"):
+            level = load_level(stages / f"{name}.json")
+            with self.subTest(level=name):
+                guided = solve(level, heuristic=relaxed_heuristic, cost_fn=default_cost_function)
+                self.assertLess(guided.expanded_nodes, solve_ucs(level).expanded_nodes)
+
+
+class SplitHeuristicTests(unittest.TestCase):
+    def test_split_cubes_pay_the_walk_and_the_merged_block(self) -> None:
+        level = load_level(ALL_STAGES[0].parents[1] / "split" / "01_split_intro.json")
+        apart = GameState.split(((2, 0), (2, 2)))
+
+        # one step merges them over the middle cells, then one roll stands the block on the goal;
+        # merging over (2, 0) is one step too, but that block can never stand on the goal
+        self.assertEqual(relaxed_heuristic(level, apart), 0.0)
+        self.assertEqual(split_heuristic(level, apart), 2.0)
+
+    def test_walls_lengthen_the_walk_to_the_merge(self) -> None:
+        level = parse_grid(["S#####", ".....#", "G#####"], name="Folded corridor")
+        across = GameState.split(((0, 0), (2, 0)))
+
+        # ten steps around the fold, one more to merge over (2, 1), then one roll onto the goal
+        self.assertEqual(split_heuristic(level, across), 12.0)
+
+    def test_intact_blocks_keep_the_relaxed_distance(self) -> None:
+        level = parse_grid(["#######", "#S#####", "####G##", "#######"], name="Open board")
+        lying_on_goal = GameState.standard(level.goal, Orientation.HORIZONTAL)
+
+        self.assertEqual(split_heuristic(level, level.initial_state), 3.0)
+        self.assertEqual(split_heuristic(level, lying_on_goal), 4.0)
+        self.assertEqual(split_heuristic(level, GameState.standard(level.goal)), 0.0)
+
+    def test_states_cut_off_from_every_target_come_last(self) -> None:
+        level = parse_grid(["S##.##G"], name="No way across")
+
+        # five times the six cells, above any walk plus relaxed distance on this board
+        self.assertEqual(split_heuristic(level, level.initial_state), 30.0)
+        self.assertEqual(split_heuristic(level, GameState.split(((0, 0), (0, 4)))), 30.0)
+        self.assertFalse(solve(level, heuristic=split_heuristic).found)
+
+    def test_split_heuristic_is_admissible_and_consistent_on_split_stages(self) -> None:
+        for path in SPLIT_STAGES:
+            level = load_level(path)
+            seen, costs = exact_costs_to_goal(level)
+            with self.subTest(level=path.name):
+                for state in seen:
+                    estimate = split_heuristic(level, state)
+                    if state in costs:
+                        self.assertLessEqual(estimate, costs[state])
+                    for _, next_state, cost in get_successors(level, state):
+                        self.assertLessEqual(estimate, cost + split_heuristic(level, next_state))
+
+    def test_split_heuristic_stays_admissible_and_consistent_on_the_ucs_cost(self) -> None:
+        for path in SPLIT_STAGES:
+            level = load_level(path)
+            seen, costs = exact_ucs_costs_to_goal(level)
+            with self.subTest(level=path.name):
+                for state in seen:
+                    estimate = split_heuristic(level, state)
+                    if state in costs:
+                        self.assertLessEqual(estimate, costs[state])
+                    for action, next_state, _ in get_successors(level, state):
+                        step = default_cost_function(level, state, action, next_state)
+                        self.assertLessEqual(estimate, step + split_heuristic(level, next_state))
+
+    def test_split_astar_keeps_the_cost_and_opens_fewer_nodes_on_split_stages(self) -> None:
+        for path in SPLIT_STAGES:
+            level = load_level(path)
+            for cost_fn in (None, default_cost_function):
+                with self.subTest(level=path.name, ucs_cost=cost_fn is not None):
+                    guided = solve(level, heuristic=split_heuristic, cost_fn=cost_fn)
+                    relaxed = solve(level, heuristic=relaxed_heuristic, cost_fn=cost_fn)
+                    self.assertEqual(guided.path_cost, relaxed.path_cost)
+                    self.assertLess(guided.expanded_nodes, relaxed.expanded_nodes)
+
+    def test_stages_without_split_switches_open_the_same_nodes(self) -> None:
+        for path in ALL_STAGES:
+            level = load_level(path)
+            if level.split_switches:
+                continue
+            for cost_fn in (None, default_cost_function):
+                with self.subTest(level=path.name, ucs_cost=cost_fn is not None):
+                    guided = solve(level, heuristic=split_heuristic, cost_fn=cost_fn)
+                    relaxed = solve(level, heuristic=relaxed_heuristic, cost_fn=cost_fn)
+                    self.assertEqual(guided.moves, relaxed.moves)
+                    self.assertEqual(guided.expanded_nodes, relaxed.expanded_nodes)
 
 
 if __name__ == "__main__":
