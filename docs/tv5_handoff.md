@@ -28,14 +28,16 @@
     thắng thì khối tụt xuống hố kho báu.
   - Rê chuột lên công tắc để thấy các ô cầu nó điều khiển (viền vàng) hoặc hai ô đích khi
     tách (khung tím). Thanh trạng thái mô tả ô đang trỏ và tư thế hiện tại của khối.
-- **Game**: chọn màn (`basic/…`, `advanced/…`, `demo/…`), *New Game* (nạp lại màn từ
+- **Game**: chọn một trong 10 màn demo (`DEMO_STAGES` trong `gui/app.py`; màn khác mở bằng
+  *Open...*), *New Game* (nạp lại màn từ
   file, xóa kết quả giải), *Restart* (về vị trí xuất phát, giữ kết quả giải), *Open...*,
   *Undo* và bộ đếm nước đi.
 - **Solvers**: năm nút *Solve BFS / DFS / IDS / UCS / A\**, chạy ở luồng nền nên giao
   diện không bị treo, luôn giải từ vị trí xuất phát. Không có đường đi thì báo
   *No solution found*.
 - **Result**: thuật toán, tìm thấy hay không, độ dài lời giải, tổng chi phí, số nút mở
-  rộng, thời gian tìm kiếm, bộ nhớ đỉnh.
+  rộng, thời gian tìm kiếm, bộ nhớ đỉnh. Chi phí của mọi solver đều tính bằng hàm chi phí của UCS
+  (`Backend.step_cost`), nên so được với nhau; BFS, DFS, IDS vẫn chỉ tìm theo số nước.
 - **Solution replay**: danh sách nước đi (bấm một dòng để nhảy tới bước đó), các nút
   *Start / Prev / Play / Next / End* và thanh tốc độ. Bấm phím di chuyển giữa lúc replay
   để chơi tiếp từ trạng thái đó.
@@ -67,7 +69,7 @@ Các nút solver gọi `solve(level, level.initial_state)` theo hợp đồng ch
 | DFS | `solvers.dfs` | `strategy="dfs"` |
 | IDS | `solvers.dfs` | `strategy="ids"` |
 | UCS | `solvers.ucs` | – |
-| A\* | `solvers.astar` | `heuristic=relaxed_heuristic` |
+| A\* | `solvers.astar` | `heuristic=split_heuristic` |
 
 Module chưa có thì nút bị khóa và khung Solvers ghi *not merged yet*. Module có nhưng
 import lỗi thì chỉ nút đó bị khóa, khung Solvers hiện lỗi, GUI vẫn chạy bình thường.
@@ -83,11 +85,15 @@ import lỗi thì chỉ nút đó bị khóa, khung Solvers hiện lỗi, GUI v�
   vị trí của nó, nên phần đầu và phần chân không đổi chỗ trên màn hình (`app.py` đưa mọi
   trạng thái qua `App._state_view`). Cube đơn đi được trên cầu đang mở và nhấn được công tắc mềm
   (xem `docs/tv3_handoff.md`, mục 2b).
-- **TV4 (A\*):** nút A\* truyền `relaxed_heuristic` (`_astar_solver` trong
-  `gui/backend.py`): số lần lăn ít nhất tới đích trên bàn nới lỏng (mọi cầu mở, bỏ luật
-  fragile), coi công tắc tách cũng là đích nên vẫn chấp nhận được trên màn split. Lập luận
-  và số đo nằm trong `docs/report_astar_experiments_vi.md`. `solve` và lệnh
-  `python -m solvers.astar` vẫn mặc định `h = 0`; thêm `--relaxed-heuristic` để dùng heuristic mới.
+- **TV4 (A\*):** nút A\* truyền `split_heuristic` (`_astar_solver` trong `gui/backend.py`). Với
+  khối nguyên, hàm này là `relaxed_heuristic`: số lần lăn ít nhất tới đích trên bàn nới lỏng (mọi
+  cầu mở, bỏ luật fragile), coi công tắc tách cũng là đích nên vẫn chấp nhận được trên màn split.
+  Với khối đã tách, hàm lấy số bước ít nhất để hai cube đứng kề nhau trên bàn nới lỏng cộng với
+  `relaxed_heuristic` của khối sau khi ghép, bỏ qua những chỗ ghép không tới được đích nào. Nút này
+  tìm trên hàm chi phí của UCS, nên A\* và UCS cùng mục tiêu và chỉ khác số nút. Lập luận và số đo
+  của `relaxed_heuristic` nằm trong `docs/report_astar_experiments_vi.md`. `solve` và lệnh
+  `python -m solvers.astar` vẫn mặc định `h = 0` với mỗi nước tốn 1; thêm `--split-heuristic`
+  để dùng heuristic này và `--ucs-cost` để dùng hàm chi phí của UCS.
 
 ## Màn demo (`levels/demo/`)
 

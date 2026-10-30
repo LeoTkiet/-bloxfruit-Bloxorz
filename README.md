@@ -29,17 +29,36 @@ python main.py levels/demo/08_showcase.json       # opens a specific stage
 | P | Play or pause the solution replay |
 | Mouse drag, wheel, Q / E, V | Orbit, zoom, turn the camera 15°, reset the view |
 
-The side panel holds the stage list, New Game, Restart, Open..., Undo, the
-solver buttons (BFS, DFS, IDS, UCS, A*), the metrics of the last search and
-the replay controls. Solvers run in the background, always from the start
-position; a stage without a solution shows *No solution found*. The UCS
-button uses UCS's default cost model and the A* button uses
-`relaxed_heuristic` (both described below). Every move, win check and replayed
-solution goes through the shared engine; the GUI has no rules of its own.
+> **Keyboard notes**
+> - **Turn off Vietnamese input (UniKey, EVKey, ...) or use the arrow keys.**
+>   Telex rewrites letter pairs by sending Backspace and a new letter, and
+>   Backspace undoes a move. For example, on `levels/demo/07_split.json`,
+>   D then D should reach the split switch, but Telex turns "dd" into "đ":
+>   Buggy rolls once, the Backspace undoes it and "đ" is ignored, so Buggy is
+>   back on the start tile with *Moves: 0*. A A, A W and A S break the same
+>   way (â, ă, á). Switch UniKey to English mode (E) before playing.
+> - **Wait for each roll to finish.** A key pressed while the block is still
+>   moving is ignored. If you press D twice very fast, Buggy rolls only once
+>   (*Moves: 1*).
 
-The stage list shows `levels/basic`, `levels/advanced`, `levels/split` (split
-switches), `levels/hard` (large stages, 35-46 moves) and `levels/demo` (the
-stages used in the demo video). GUI details, the 3D assets and integration
+The side panel holds the stage list, New Game, Restart, Open..., Undo, the
+solver buttons (BFS, DFS, IDS, UCS, A*), the metrics of the last
+search and the replay controls. Solvers run in the background, always from the
+start position; a stage without a solution shows *No solution found*. The UCS
+button uses UCS's default cost model and the A* button uses
+`split_heuristic` on that same cost model (both described below).
+`levels/advanced/02_fragile_band.json` shows all three differences: BFS takes
+the fewest moves, UCS pays the least, and A* pays the same as UCS but opens
+fewer nodes.
+
+Every move, win check and replayed solution goes through the shared engine; the
+GUI has no rules of its own.
+
+The stage list shows the 10 stages of the demo video (`DEMO_STAGES` in
+`gui/app.py`). The other stages stay in `levels/basic`, `levels/advanced`,
+`levels/split` (split switches), `levels/hard` (large stages, 35-46 moves) and
+`levels/demo`, where the experiments use them; open them with Open... or
+`python main.py <file>`. GUI details, the 3D assets and integration
 notes are in [`docs/tv5_handoff.md`](docs/tv5_handoff.md).
 
 ## Project structure
@@ -64,7 +83,7 @@ docs/            handoff notes of each member, report drafts, experiments/result
 | DFS | `python -m solvers.dfs levels/demo/08_showcase.json --strategy dfs` |
 | IDS | `python -m solvers.dfs levels/demo/08_showcase.json --strategy ids` |
 | UCS | `python -m solvers.ucs levels/demo/08_showcase.json` (add `--unit-cost` for cost 1 per action) |
-| A* | `python -m solvers.astar levels/demo/08_showcase.json --relaxed-heuristic` |
+| A* | `python -m solvers.astar levels/demo/08_showcase.json --split-heuristic` (add `--ucs-cost` for the UCS cost model, as in the GUI) |
 
 Each command prints a JSON summary with `found`, `moves`, `search_time`
 (seconds), `peak_memory` (bytes), `expanded_nodes`, `solution_length` and
@@ -72,11 +91,14 @@ Each command prints a JSON summary with `found`, `moves`, `search_time`
 but not optimal; UCS returns a least-cost solution; A* is optimal with an
 admissible heuristic.
 
-**Costs.** The engine gives every action a cost of 1. UCS uses its own default
-cost model (TV3): a roll or a cube move costs 1, switching the controlled cube
-costs 0.5 and the roll that triggers a split switch costs 1.5. On stages
-without split switches this is the same as unit cost. `--unit-cost` sets every
-action to 1.
+**Costs.** The engine gives every action a cost of 1, which is what BFS, DFS
+and IDS count. UCS uses its own default cost model (TV3): a roll or a cube move
+costs 1, a step that lands on a fragile tile costs 3 more, switching the
+controlled cube costs 0.5 and the roll that triggers a split switch costs 1.5.
+On stages without fragile tiles UCS takes the same route as BFS. `--unit-cost`
+sets every action to 1. The GUI's A* searches on the same cost model as UCS, so
+the two pay the same and differ only in the nodes they open, and the GUI's
+*Path cost* prices every route with this model, BFS's included.
 
 **A\* heuristics.** `solvers.astar.solve` takes a `heuristic` argument:
 
@@ -84,11 +106,14 @@ action to 1.
 |---|---|---|---|
 | `zero_heuristic` | `--zero-heuristic` (default) | 0, so A* expands like unit-cost UCS | every stage |
 | `astar_heuristic` | `--core-geometric-heuristic` | ⌈Manhattan distance to the goal / 2⌉ | stages without split switches |
-| `relaxed_heuristic` | `--relaxed-heuristic` | exact number of rolls to the goal on a relaxed board (every bridge open, no fragile rule, split switches count as targets) | every stage |
+| `relaxed_heuristic` | `--relaxed-heuristic` | exact number of rolls to the goal on a relaxed board (every bridge open, no fragile rule, split switches count as targets); 0 once the block has split | every stage |
+| `split_heuristic` | `--split-heuristic` | `relaxed_heuristic` for an intact block; for split cubes, the fewest cube steps to stand side by side on the relaxed board plus the merged block's relaxed distance, skipping merged blocks that can reach no target | every stage |
 
-`relaxed_heuristic` is admissible and consistent on every stage, and on every
-stage without split switches it expands the fewest nodes of the three; on
-split stages it expands about as many as `h = 0`. The GUI uses it. The reasoning and measurements are in
+`relaxed_heuristic` and `split_heuristic` are admissible and consistent on every
+stage. On stages without split switches the two open the same nodes, the fewest
+of the four. On split stages `relaxed_heuristic` expands about as many as
+`h = 0`, while `split_heuristic` opens 50-93% fewer on the UCS cost model. The GUI
+uses `split_heuristic`. The reasoning and measurements for `relaxed_heuristic` are in
 [`docs/report_astar_experiments_vi.md`](docs/report_astar_experiments_vi.md).
 
 ## Run the experiments
@@ -97,11 +122,14 @@ split stages it expands about as many as `h = 0`. The GUI uses it. The reasoning
 python tools/benchmark.py                         # all stages -> docs/experiments/results.csv
 python tools/benchmark.py --groups hard split     # only some stage groups
 python tools/benchmark.py --repeat 5 --out other.csv
+python tools/benchmark.py --solvers BFS UCS "A* relaxed (UCS cost)" --out docs/experiments/bfs_ucs_astar.csv
 ```
 
 The script runs BFS, DFS, IDS, UCS and A* (with `h = 0`, the geometric
-heuristic and the relaxed heuristic) on every stage and writes one CSV row per
-(stage, solver): `found`, `solution_length`, `path_cost`, `expanded_nodes`,
+heuristic, the relaxed heuristic and the split heuristic, plus the last two on
+the UCS cost model) on every stage and writes one CSV row per (stage, solver): `found`,
+`solution_length`, `path_cost` (what the solver optimised), `ucs_cost` (the route
+priced with the UCS cost model, one scale for every solver), `expanded_nodes`,
 `peak_memory_kib` (tracemalloc) and `search_time_ms` (median of `--repeat`
 runs, default 3; a search slower than `--slow` seconds, default 2, runs once).
 The geometric A* row is skipped on split stages, where that bound is not
@@ -113,7 +141,7 @@ admissible.
 python -m unittest discover -s tests -v
 ```
 
-The 188 tests take 3-5 minutes, mostly on the hard stages. They cover the 12
+The 211 tests take 5-8 minutes, mostly on the hard stages. They cover the 12
 orientation-direction transitions, state hashing, illegal moves and the goal
 test; both level formats; every advanced tile and switch kind; split, cube
 switching and merge, and split cubes on bridges and switches; the correctness, optimality and metrics of every solver;

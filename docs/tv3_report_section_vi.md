@@ -1,7 +1,8 @@
 # Phần báo cáo của TV3: Tách/ghép khối và UCS
 
 > Bản nháp để TV5 ghép vào Report.pdf (mục Formalization: phần split, và mục UCS). Số liệu lấy
-> từ `docs/experiments/results.csv` (đo lại ngày 28/10 bằng `python tools/benchmark.py`).
+> từ `docs/experiments/results.csv` (đo lại ngày 28/10 bằng `python tools/benchmark.py`), riêng
+> mục 2.3 và 2.4 lấy từ `docs/experiments/bfs_ucs_astar.csv` (31/10, sau khi thêm phụ phí băng).
 
 ## 1. Tách và ghép khối
 
@@ -112,36 +113,60 @@ thì `g` là chi phí nhỏ nhất tới nó (lập luận Dijkstra). Vì vậy 
 | Lăn khối nguyên, bước của cube đơn | 1,0 | Một lần di chuyển thật |
 | Switch (đổi cube đang điều khiển) | 0,5 | Không khối nào di chuyển, chỉ đổi quyền điều khiển; vẫn > 0 để UCS không lặp đổi qua đổi lại miễn phí |
 | Bước đứng lên split switch và tách | 1,5 | Tách khối là thao tác lớn, phải ghép lại sau đó; chi phí cao khiến UCS chỉ tách khi đường không tách đắt hơn |
+| Bước đáp lên ô fragile (khối hoặc cube) | cộng thêm 3,0 | Băng mỏng rủi ro: đứng nhầm là thua cả màn. Mỗi bước chỉ cộng một lần, dù đè lên một hay hai ô băng; cube đang đứng yên trên băng không bị tính |
 
 `--unit-cost` (`unit_cost_function`) đặt mọi bước bằng 1; khi đó UCS cho cùng độ dài lời giải với
 BFS trên mọi màn (`tests/test_ucs.py`).
 
-Vì chỉ các bước liên quan tới tách mới khác 1, trên các màn **không** có split switch UCS suy biến
-thành BFS: số nút mở rộng và độ dài lời giải trùng BFS ở cả ba nhóm `basic`, `advanced`, `hard`.
-Muốn UCS khác BFS ở các màn này, có thể cho phép lăn lên ô fragile tốn 1,5 (rủi ro). Khi đó cần
-lập luận lại tính chấp nhận được của heuristic A\* nếu A\* dùng chung hàm chi phí.
+**Vì sao cần phụ phí băng.** Nếu chỉ có hai mức giá liên quan tới tách khối, UCS chọn đúng đường
+của BFS trên cả 30 màn giải được: màn không có split switch thì mọi bước tốn 1, còn màn có split
+switch thì +0,5 khi tách và −0,5 khi đổi cube thường triệt tiêu nhau. Đó chính là trường hợp đề
+bài cảnh báo. Phụ phí băng làm hàm chi phí đo một thứ khác số nước: độ rủi ro của đường đi.
+
+**Chọn mức phụ phí.** Mức 3,0 có nghĩa là UCS chấp nhận đi thêm tối đa 3 nước để tránh một lần đáp
+lên băng. Bảng dưới thử nhiều mức trên 30 màn giải được, so với đường của BFS tính trên cùng hàm:
+
+| Phụ phí | Số màn UCS rẻ hơn BFS | Số màn UCS đi nhiều nước hơn BFS | Số nước của UCS ở `advanced/02`, `split/03`, `hard/02`, `demo/08` |
+| ---: | ---: | ---: | --- |
+| 0 | 0 | 0 | 6, 31, 37, 23 |
+| 0,5 và 1 | 3 | 1 | 6, 32, 37, 23 |
+| 1,5 và 2 | 3 | 2 | 6, 33, 37, 27 |
+| 2,5; 3; 4; 5 và 10 | 4 | 3 | 8, 33, 37, 27 |
+
+Từ 2,5 trở lên số nước của UCS không đổi nữa, nên kết luận không phụ thuộc vào con số 3,0 cụ thể.
+Mức này được chọn sau khi xem bảng trên, để sự khác biệt với BFS hiện rõ; nó không được suy ra từ
+một mô hình rủi ro.
+
+Hàm chi phí chỉ đổi kết quả khi có băng trên đường đi: trong 8 màn giải được có băng, UCS đổi
+đường ở 5 màn và rẻ hơn BFS thật sự ở 4 màn. Trên 22 màn giải được còn lại, UCS vẫn đi đúng đường
+của BFS. Mọi phép lăn vẫn tốn ít nhất 1, nên `relaxed_heuristic` vẫn chấp nhận được khi A\* dùng
+chung hàm này (`docs/report_astar_experiments_vi.md`, mục 2.2).
 
 ### 2.4 Số liệu trên nhóm split
 
-Số nút mở rộng / độ dài lời giải / tổng chi phí:
+Số nút mở rộng / độ dài lời giải / tổng chi phí, với đường của BFS được tính trên cùng hàm chi phí:
 
 | Màn | BFS | UCS (chi phí mặc định) |
 | --- | --- | --- |
-| `01_split_intro` | 6 / 4 / 4 | 8 / 4 / 4,5 |
+| `01_split_intro` | 6 / 4 / 4,5 | 8 / 4 / 4,5 |
 | `02_split_reunion` | 4 857 / 31 / 31 | 4 864 / 31 / 31 |
-| `03_fragile_split` | 6 401 / 31 / 31 | 6 477 / 31 / 31 |
+| `03_fragile_split` | 6 401 / 31 / 49 | 5 356 / 33 / 39 |
 | `04_heavy_split_bridges` | 8 002 / 29 / 29 | 8 083 / 29 / 29 |
 
 Ở `01_split_intro`, bốn nước gồm một bước tách 1,5 nên tổng chi phí là 1 + 1,5 + 1 + 1 = 4,5.
-Trên ba màn lớn, lời giải UCS có đúng một bước tách (1,5) và một bước Switch (0,5); hai mức lệch
-triệt tiêu nhau nên tổng chi phí trùng số nước. UCS mở rộng nhiều hơn BFS 0,1–1,2 % vì thứ tự lấy
-ra theo chi phí khác thứ tự theo số nước.
+Ở `02` và `04`, lời giải có đúng một bước tách (1,5) và một bước Switch (0,5); hai mức lệch triệt
+tiêu nhau nên tổng chi phí trùng số nước, và UCS mở rộng nhiều hơn BFS 0,1–1,0 % vì thứ tự lấy ra
+theo chi phí khác thứ tự theo số nước. `03_fragile_split` là màn duy nhất của nhóm có băng: UCS đi
+thêm 2 nước để giảm số lần đáp lên băng từ 6 xuống 2, tổng chi phí 39 so với 49, và mở rộng ít hơn
+BFS 16 % vì trạng thái đã qua băng có chi phí cao nên bị đẩy về sau trong hàng đợi.
 
 ### 2.5 Kiểm thử
 
-`tests/test_ucs.py` (7 test): lời giải ngắn nhất, màn vô nghiệm, đứng sẵn ở đích, replay đúng,
+`tests/test_ucs.py` (15 test): lời giải ngắn nhất, màn vô nghiệm, đứng sẵn ở đích, replay đúng,
 unit cost trùng BFS trên mọi màn `basic`, chọn đường rẻ hơn dù dài hơn khi chi phí lệch, đủ các
-chỉ số. `tests/test_split.py` thêm một test duyệt **mọi** chuỗi hành động có độ dài tới số bước
+chỉ số; tám test cho phụ phí băng: giá từng loại bước, cube đứng yên trên băng không bị tính, UCS
+đi vòng băng trên `advanced/02`, rẻ hơn với cùng số nước trên `hard/02`, chi phí bằng số nước trên
+màn không có băng. `tests/test_split.py` thêm một test duyệt **mọi** chuỗi hành động có độ dài tới số bước
 BFS + 2 trên `split/01_split_intro` và xác nhận không chuỗi nào tới đích với chi phí nhỏ hơn
 `path_cost` của UCS.
 

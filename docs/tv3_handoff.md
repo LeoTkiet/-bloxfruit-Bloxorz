@@ -126,8 +126,8 @@ UCS is implemented from scratch in `solvers/ucs.py` using Python's `heapq`:
      - Standard directional movement: `1.0`
      - Switching active cube (`Action.SWITCH`): `0.5` (mental focus change, no physical block shift)
      - Split switch trigger / teleportation: `1.5` (energy cost of dissociation)
-     - Every other move, including unit-cube moves and fragile tiles: `1.0`
-       (an earlier draft of this note also listed a fragile cost of `1.5`; `default_cost_function` never had it)
+     - Every other move, including unit-cube moves: `1.0`
+     - A step that lands on a fragile tile: `3.0` more (`FRAGILE_SURCHARGE`, added 31/10), so that UCS can take a different route from BFS. A cube resting on ice while the other one moves pays nothing.
    - **Unit Cost (`--unit-cost`)**:
      - Every action has cost `1.0`. Under unit cost, UCS produces solutions of identical length to BFS across all 10 basic levels and 9 advanced levels.
 

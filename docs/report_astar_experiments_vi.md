@@ -6,6 +6,9 @@
 > Đo lại toàn bộ ngày 28/10 sau khi sửa luật cube đơn (`split/04`: 33 → 29 nước), thêm
 > `demo/07_split` và công tắc tách của `demo/08_showcase`. Biểu đồ trên vẫn dùng số đo ngày
 > 26/10, cần dựng lại từ CSV mới.
+> Ngày 31/10: hàm chi phí của UCS có thêm phụ phí băng và nút A\* trong GUI dùng chung hàm đó.
+> Số liệu mới nằm ở bảng cuối mục 3.3, lấy từ `docs/experiments/bfs_ucs_astar.csv`. `results.csv`
+> và các bảng còn lại của mục 3.3 chưa đo lại, nên cột UCS của chúng vẫn ứng với hàm chi phí cũ.
 
 ## 1. Bài toán tìm kiếm
 
@@ -18,8 +21,10 @@
   đứng trên split switch thì khối tách thành hai cube đặt tại hai ô đích. Cube đơn đi trên sàn,
   fragile và cầu đang mở, nhấn soft switch nhưng không nhấn heavy/split switch.
 - **Đích:** khối nguyên **đứng** trên ô goal.
-- **Chi phí:** mỗi nước đi tốn 1 (BFS, DFS/IDS, A\*). UCS dùng hàm chi phí của TV3: lăn 1,0,
-  đổi cube 0,5, kích split switch 1,5.
+- **Chi phí:** BFS và DFS/IDS tìm theo số nước đi (mỗi nước tốn 1). UCS dùng hàm chi phí không
+  đều của TV3: lăn 1,0; đổi cube 0,5; kích split switch 1,5; bước đáp lên ô fragile cộng thêm 3,0.
+  A\* có hai cấu hình: chi phí đơn vị để so riêng các heuristic, và cùng hàm với UCS để so với UCS
+  (đây là nút A\* trong GUI).
 
 ## 2. Ba heuristic được so sánh
 
@@ -83,9 +88,10 @@ tới được goal, và
 A\* với `hR` không bao giờ phải mở rộng nút nào mà A\* với `hG` bỏ qua được (trừ khác biệt do
 phá thế hòa).
 
-**Với hàm chi phí của UCS:** phép lăn tốn 1,0, kích split switch tốn 1,5 (≥ 1), còn đổi cube
-0,5 chỉ xảy ra khi khối đã tách, lúc đó `hR = 0`. Vì vậy `hR` vẫn chấp nhận được và nhất quán
-khi A\* dùng hàm chi phí của TV3.
+**Với hàm chi phí của UCS:** mỗi phép lăn tốn ít nhất 1,0 (kích split switch 1,5, đáp lên ô
+fragile cộng thêm 3,0), còn đổi cube 0,5 chỉ xảy ra khi khối đã tách, lúc đó `hR = 0`. Vì vậy
+`hR` vẫn chấp nhận được và nhất quán khi A\* dùng hàm chi phí của TV3. `hR` không tính phụ phí
+băng nên ước lượng lỏng hơn trên đường qua băng; mục 4 nêu ảnh hưởng của điều này.
 
 ### 2.3 Kiểm chứng bằng máy
 
@@ -95,10 +101,14 @@ Ngoài lập luận trên, `tests/test_astar.py` duyệt **toàn bộ** trạng 
 - không trạng thái nào có `hR` lớn hơn chi phí thật (chấp nhận được);
 - không cạnh nào vi phạm `hR(s) ≤ c + hR(s′)` (nhất quán);
 - `hR ≥ hG` trên mọi trạng thái tới được đích của màn không có split switch;
-- A\* với `hR` cho lời giải dài bằng BFS trên cả 34 màn.
+- A\* với `hR` cho lời giải dài bằng BFS trên cả 34 màn;
+- với hàm chi phí của UCS, `hR` cũng không lớn hơn chi phí thật, không vi phạm tính nhất quán, và
+  A\* dùng hàm này trả đúng chi phí của UCS trên mọi màn.
 
 Lần kiểm tra thủ công ngày 28/10 trên cả 34 màn (gồm ba màn split lớn, tổng 32 829 trạng
-thái tới được, theo luật cube đơn mới) cũng cho 0 vi phạm cả ba tính chất.
+thái tới được, theo luật cube đơn mới) cũng cho 0 vi phạm cả ba tính chất. Lần kiểm tra ngày 31/10
+với hàm chi phí của UCS trên cùng 32 829 trạng thái cho 0 lần ước lượng vượt và 0 cạnh vi phạm tính
+nhất quán; chi phí của UCS khớp với Dijkstra chạy ngược từ đích trên cả 34 màn.
 
 ## 3. Thực nghiệm
 
@@ -122,7 +132,9 @@ Bảy màn `levels/demo/` dùng để quay video; số đo của chúng vẫn c�
 - **Thời gian:** `perf_counter` quanh vòng tìm kiếm; lấy trung vị của 3 lần chạy (lần chạy
   > 2 giây chỉ chạy 1 lần). **Bộ nhớ:** đỉnh `tracemalloc` trong lúc tìm kiếm.
   **Nút mở rộng:** số trạng thái được lấy ra và sinh con. **Độ dài lời giải:** số nước đi.
-- Hàm chi phí: đơn vị cho BFS, DFS/IDS, A\*; hàm chi phí mặc định của TV3 cho UCS.
+- Hàm chi phí: đơn vị cho BFS, DFS/IDS và các dòng A\* `h0`, `hG`, `hR`; hàm chi phí mặc định của
+  TV3 cho UCS và dòng `A* relaxed (UCS cost)`. Cột `ucs_cost` tính lại đường của mọi solver trên
+  hàm của TV3, để so được với nhau.
 - A\* chạy với ba heuristic `h0`, `hG`, `hR`; `hG` bỏ qua trên màn split vì không chấp nhận được.
 - Lệnh tái tạo: `python tools/benchmark.py` → `docs/experiments/results.csv` (232 dòng).
 - Số đo ngày 28/10 chạy một lượt khi máy chạy chậm hơn lần đo 26/10 (khoảng 1,5 lần ở đa số
@@ -130,6 +142,9 @@ Bảy màn `levels/demo/` dùng để quay video; số đo của chúng vẫn c�
   khi chênh lệch lớn. Số nút mở rộng và độ dài lời giải không phụ thuộc máy.
 
 ### 3.3 Kết quả tổng hợp theo nhóm
+
+Các bảng từ đây tới bảng so sánh heuristic là số đo ngày 28/10, trước khi thêm phụ phí băng: cột
+UCS sẽ đổi khi đo lại, các cột khác có số nút và độ dài lời giải giữ nguyên.
 
 **Tổng số nút mở rộng**
 
@@ -211,10 +226,46 @@ Bảy màn `levels/demo/` dùng để quay video; số đo của chúng vẫn c�
 | demo/07_split | 18 | 514 | – | 531 | – |
 | demo/08_showcase | 23 | 943 | – | 908 | – |
 
+**BFS, UCS và A\* trên cùng một thang chi phí**
+
+Nguồn: `docs/experiments/bfs_ucs_astar.csv`, sinh bằng
+`python tools/benchmark.py --solvers BFS UCS "A* relaxed (UCS cost)" --out docs/experiments/bfs_ucs_astar.csv`.
+A\* dùng `hR` và hàm chi phí của UCS; đường của BFS được tính lại trên hàm đó. Bảng chỉ dùng số nước,
+chi phí và số nút, là những đại lượng không phụ thuộc máy. Mỗi ô ghi số nước / chi phí / số nút.
+
+Tổng theo nhóm (số nước và chi phí tính trên các màn giải được, số nút tính trên mọi màn):
+
+| Nhóm | BFS | UCS | A\* |
+| --- | ---: | ---: | ---: |
+| basic | 35 / 35 / 176 | 35 / 35 / 176 | 35 / 35 / 48 |
+| advanced | 49 / 61 / 264 | 51 / 60 / 254 | 51 / 60 / 109 |
+| split | 95 / 113,5 / 19 266 | 97 / 103,5 / 18 311 | 97 / 103,5 / 18 082 |
+| hard | 163 / 193 / 3 520 | 163 / 184 / 3 466 | 163 / 184 / 1 853 |
+
+Các màn mà UCS đi đường khác BFS (`demo/08_showcase` không thuộc bộ test cố định, chỉ để minh họa):
+
+| Màn | Số lần đáp lên băng, BFS → UCS | BFS | UCS | A\* |
+| --- | ---: | ---: | ---: | ---: |
+| advanced/02_fragile_band | 2 → 1 | 6 / 12 / 50 | 8 / 11 / 48 | 8 / 11 / 23 |
+| split/03_fragile_split | 6 → 2 | 31 / 49 / 6 401 | 33 / 39 / 5 356 | 33 / 39 / 5 319 |
+| hard/02_fragile_bands | 9 → 6 | 37 / 64 / 361 | 37 / 55 / 352 | 37 / 55 / 241 |
+| hard/04_grand_finale | 1 → 1 | 46 / 49 / 1 280 | 46 / 49 / 1 235 | 46 / 49 / 806 |
+| demo/08_showcase | 6 → 1 | 23 / 41 / 943 | 27 / 30 / 580 | 27 / 30 / 580 |
+
+Trên 24 màn giải được của bộ test cố định, A\* trả đúng chi phí của UCS ở cả 24 màn và mở ít nút hơn
+ở 16 màn, bằng ở 7 màn, nhiều hơn ở 1 màn (`split/02`: 4 876 so với 4 864).
+
 ## 4. Nhận xét
 
-**Tính tối ưu.** BFS, IDS, UCS và A\* với cả ba heuristic đều cho lời giải ngắn nhất trên mọi
-màn. DFS thì không: ở nhóm `hard` tổng độ dài lời giải của DFS là 1 485 nước so với 163 nước
+**BFS, UCS và A\*.** BFS tìm ít nước nhất, không quan tâm đường đi qua đâu. UCS tìm đường rẻ nhất
+theo hàm chi phí ở mục 1, nên có thể đi nhiều nước hơn để tránh băng. A\* dùng cùng hàm với UCS nên
+trả cùng chi phí, và nhờ `hR` thường mở ít nút hơn. `advanced/02_fragile_band` cho thấy cả ba: BFS
+đi 6 nước với chi phí 12; UCS đi 8 nước với chi phí 11; A\* cũng đi 8 nước với chi phí 11 nhưng mở
+23 nút so với 48 của UCS.
+
+**Tính tối ưu.** BFS, IDS và A\* chi phí đơn vị với cả ba heuristic đều cho lời giải ít nước nhất
+trên mọi màn; UCS và A\* trên hàm của UCS cho lời giải rẻ nhất, có thể dài hơn. DFS thì không tối
+ưu theo tiêu chí nào: ở nhóm `hard` tổng độ dài lời giải của DFS là 1 485 nước so với 163 nước
 tối ưu (gấp khoảng 9 lần), ở nhóm `split` là 2 110 so với 95, riêng `split/02_split_reunion`
 DFS đi 1 629 nước cho bài toán chỉ cần 31. DFS đôi khi mở rộng ít nút hơn BFS (244 so với 6 401
 ở `split/03_fragile_split`) vì nó lao sâu và chạm đích sớm, nhưng đường tìm được không dùng được.
@@ -225,14 +276,13 @@ DFS đi 1 629 nước cho bài toán chỉ cần 31. DFS đôi khi mở rộng �
 0,44 giây của BFS. Trên các bàn Bloxorz nhỏ như ở đây, BFS hiếm khi hết bộ nhớ, nên lợi thế bộ
 nhớ của IDS không đáng với thời gian tăng thêm.
 
-**UCS** cho đúng số nút và độ dài như BFS ở `basic`, `advanced`, `hard`, vì hàm chi phí hiện tại
-chỉ khác 1 ở các bước liên quan tới tách khối (đổi cube 0,5, kích split switch 1,5); mọi phép
-lăn đều tốn 1,0 nên UCS suy biến thành BFS, đúng như đề bài cảnh báo. Do dùng hàng đợi ưu tiên,
-tổng thời gian của UCS cao hơn BFS 2–16 % ở ba nhóm không tách và 44 % ở nhóm `split`; bộ nhớ
-đỉnh cao hơn 15–50 % ở `advanced`, `split`, `hard`. Muốn UCS có ý nghĩa ở các màn không
-tách, cần thêm chi phí khác 1 cho phép lăn, ví dụ lăn lên ô fragile đắt hơn (bản đầu của
-`docs/tv3_handoff.md` có ghi 1,5 nhưng `solvers/ucs.py` chưa bao giờ cài; tài liệu đã sửa cho
-khớp code).
+**UCS** chỉ khác BFS khi có băng trên đường đi: trong 8 màn giải được có băng, UCS đổi đường ở 5
+màn và rẻ hơn BFS ở 4 màn (`advanced/02`, `split/03`, `hard/02`, `demo/08`). Trên 22 màn giải được
+còn lại, UCS đi đúng đường của BFS vì mọi phép lăn đều tốn 1, đúng như đề bài cảnh báo. Mức phụ phí
+3,0 được chọn sau khi thử nhiều mức (`docs/tv3_report_section_vi.md`, mục 2.3); từ 2,5 đến 10 số
+nước của UCS không đổi. Về tài nguyên (số đo 28/10, trước khi thêm phụ phí băng), do dùng hàng đợi
+ưu tiên, tổng thời gian của UCS cao hơn BFS 2–16 % ở ba nhóm không tách và 44 % ở nhóm `split`; bộ
+nhớ đỉnh cao hơn 15–50 % ở `advanced`, `split`, `hard`.
 
 **A\* và heuristic.**
 
@@ -251,6 +301,11 @@ khớp code).
   BFS 38 % nhưng thời gian chỉ giảm khoảng 30 % (105 ms so với 149 ms; lần đo 26/10 hai số này
   ngang nhau). Trên màn rất nhỏ, bảng `hR` làm bộ
   nhớ đỉnh nhích lên vài KiB.
+- Trên hàm chi phí của UCS, `hR` không tính phụ phí băng nên lỏng hơn: `hard/02` cần 241 nút so với
+  207 trên chi phí đơn vị, `advanced/02` cần 23 so với 11. A\* vẫn mở ít nút hơn UCS ở hai màn này
+  (352 và 48). Ở `demo/08_showcase`, A\* và UCS mở bằng nhau (580 nút): 79 % trạng thái A\* mở là
+  trạng thái đã tách, nơi `hR = 0`. Tính phụ phí băng vào bảng khoảng cách của `hR` là một hướng
+  cải thiện chưa thử.
 
 **Màn split làm không gian trạng thái bùng nổ.** Sau khi tách, trạng thái là một *cặp* vị trí
 cube, nên bàn 12×8 của `split/02_split_reunion` đã có gần 5 000 trạng thái, nhiều hơn bàn 20×12
@@ -264,7 +319,10 @@ dựa trên số bước để hai cube kề nhau rồi khoảng cách `hR` từ
 - `solvers/astar.py`: thêm `relaxed_heuristic` (cùng bảng khoảng cách lưu đệm theo màn) và cờ
   `--relaxed-heuristic` cho lệnh `python -m solvers.astar`. `solve` vẫn mặc định `h0` để giữ
   hợp đồng cũ; `astar_heuristic` của TV4 giữ nguyên để so sánh.
-- `gui/backend.py`: nút A\* truyền `relaxed_heuristic` trên mọi màn (trước đây là `h0`).
-- `tools/benchmark.py`: khung thực nghiệm chạy 7 cấu hình solver trên mọi màn, ghi CSV.
-- `tests/test_astar.py`, `tests/test_gui.py`: kiểm tra `hR` chấp nhận được, nhất quán, trội hơn
-  `hG`, và A\* `hR` cho lời giải tối ưu trên cả 34 màn.
+- `solvers/ucs.py`: `default_cost_function` có thêm phụ phí băng (`FRAGILE_SURCHARGE`).
+- `gui/backend.py`: nút A\* truyền `relaxed_heuristic` trên mọi màn (trước đây là `h0`) và hàm chi
+  phí của UCS; chi phí hiện trên GUI của mọi solver đều tính bằng hàm đó.
+- `tools/benchmark.py`: khung thực nghiệm chạy 8 cấu hình solver trên mọi màn, ghi CSV, có cột
+  `ucs_cost` và tùy chọn `--solvers`.
+- `tests/test_astar.py`, `tests/test_gui.py`: kiểm tra `hR` chấp nhận được, nhất quán (trên cả chi
+  phí đơn vị và hàm của UCS), trội hơn `hG`, A\* `hR` cho lời giải tối ưu trên cả 34 màn.
