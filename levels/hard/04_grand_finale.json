@@ -1,0 +1,24 @@
+{
+  "name": "Grand Finale",
+  "description": "Fragile ice, a soft toggle switch, a heavy permanent switch and three bridges crossed one after another.",
+  "grid": [
+    "####o#..#F####......",
+    "#S####..####x#......",
+    "######11######......",
+    "######11######......",
+    "######..######..###.",
+    "######..##F.##..###.",
+    "..........22....####",
+    "##############..####",
+    "##############33#.G#",
+    "##########.##.33####",
+    "F#############......",
+    "######F####.#o......"
+  ],
+  "switches": [
+    {"at": [0, 4], "mode": "toggle", "targets": [1]},
+    {"at": [1, 12], "mode": "permanent_open", "targets": [2]},
+    {"at": [11, 13], "mode": "toggle", "targets": [3]}
+  ],
+  "expected_bfs_length": 46
+}

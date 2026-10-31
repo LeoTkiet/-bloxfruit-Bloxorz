@@ -10,5 +10,6 @@
       "position": [0, 3],
       "targets": [[2, 0], [2, 2]]
     }
-  ]
+  ],
+  "expected_bfs_length": 4
 }

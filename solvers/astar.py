@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from heapq import heappop, heappush
 import json
 import math
@@ -11,7 +12,18 @@ from time import perf_counter
 import tracemalloc
 from typing import Callable
 
-from engine.core import Action, GameState, Level, get_successors, is_goal
+from engine.core import (
+    ACTION_ORDER,
+    Action,
+    GameState,
+    Level,
+    Orientation,
+    Position,
+    get_successors,
+    is_goal,
+    occupied_cells,
+    roll,
+)
 from engine.level_loader import load_level
 
 from .common import ParentEntry, SolverResult, reconstruct_path
@@ -46,6 +58,66 @@ def zero_heuristic(_level: Level, _state: GameState) -> float:
     return 0.0
 
 
+_RELAXED_CACHE: dict[int, tuple[Level, dict[tuple[Position, Orientation], int]]] = {}
+
+
+def _relaxed_distances(level: Level) -> dict[tuple[Position, Orientation], int]:
+    """Roll distances to the nearest target on the relaxed board, keyed by placement.
+
+    The relaxed board keeps the void cells but opens every bridge and forgets the
+    fragile rule, so switches no longer matter. The targets are the goal and every
+    split switch, all standing. Every roll can be undone by the opposite roll, so a
+    breadth-first search outward from the targets gives the distance *to* them.
+    """
+
+    cached = _RELAXED_CACHE.get(id(level))
+    if cached is not None and cached[0] is level:
+        return cached[1]
+
+    supported = level.floor_tiles | frozenset(level.tiles.bridge_cells)
+    distances: dict[tuple[Position, Orientation], int] = {}
+    queue: deque[GameState] = deque()
+    for cell in (level.goal, *level.split_switch_map):
+        if (cell, Orientation.STANDING) not in distances:
+            distances[(cell, Orientation.STANDING)] = 0
+            queue.append(GameState.standard(cell, Orientation.STANDING))
+
+    while queue:
+        state = queue.popleft()
+        distance = distances[(state.position, state.orientation)] + 1
+        for action in ACTION_ORDER:
+            neighbour = roll(state, action)
+            key = (neighbour.position, neighbour.orientation)
+            if key in distances or not all(
+                cell in supported for cell in occupied_cells(neighbour)
+            ):
+                continue
+            distances[key] = distance
+            queue.append(neighbour)
+
+    if len(_RELAXED_CACHE) >= 8:
+        _RELAXED_CACHE.clear()
+    _RELAXED_CACHE[id(level)] = (level, distances)
+    return distances
+
+
+def relaxed_heuristic(level: Level, state: GameState) -> float:
+    """Exact number of rolls to the goal on a relaxed copy of the board.
+
+    Every real move is also legal on the relaxed board (all bridges open, no
+    fragile rule), so its distance never overestimates when each roll costs at
+    least one; being an exact shortest-path distance it is also consistent. A
+    split switch counts as a target because its teleport is free to the cubes:
+    an intact block either reaches the goal or first stands on a split switch.
+    Split states get 0. The table is built once per level, on the first call.
+    """
+
+    if state.is_split or state.position is None:
+        return 0.0
+    # placements cut off from every target cannot reach the goal on the real board either
+    return float(_relaxed_distances(level).get((state.position, state.orientation), 0))
+
+
 def _validated_heuristic(heuristic: Heuristic, level: Level, state: GameState) -> float:
     estimate = heuristic(level, state)
     if not isinstance(estimate, Real) or isinstance(estimate, bool):
@@ -75,7 +147,8 @@ def solve(
 
     The default zero heuristic preserves optimality for arbitrary non-negative
     successor costs and transitions, including TV3's split/teleport rules.
-    Supply ``astar_heuristic`` only for core-only levels where its geometric
+    Supply ``relaxed_heuristic`` for any level whose rolls cost at least one,
+    or ``astar_heuristic`` only for core-only levels where its geometric
     lower-bound assumptions hold. If ``cost_fn`` is supplied, it overrides the
     cost in each successor tuple.
     """
@@ -182,13 +255,19 @@ def main() -> int:
         action="store_true",
         help="Use the geometric heuristic for compatible core-only levels",
     )
+    heuristic_group.add_argument(
+        "--relaxed-heuristic",
+        action="store_true",
+        help="Use the relaxed-board distance (admissible on every stage)",
+    )
     arguments = parser.parse_args()
 
-    heuristic = (
-        astar_heuristic
-        if arguments.core_geometric_heuristic
-        else zero_heuristic
-    )
+    if arguments.relaxed_heuristic:
+        heuristic = relaxed_heuristic
+    elif arguments.core_geometric_heuristic:
+        heuristic = astar_heuristic
+    else:
+        heuristic = zero_heuristic
     result = solve(load_level(arguments.level), heuristic=heuristic)
     print(json.dumps(result.as_dict(), indent=2))
     return 0 if result.found else 1

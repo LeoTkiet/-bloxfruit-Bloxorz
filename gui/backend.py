@@ -206,6 +206,28 @@ class Backend:
         return Trace(algorithm, found, [action_label(m) for m in moves], states, metrics, warning)
 
 
+def _astar_solver(module) -> Callable:
+    """A* with the relaxed-board distance, which stays admissible on every stage.
+
+    Older solver modules without it fall back to TV4's geometric bound, which
+    assumes the block pays for every cell it travels: split switches teleport the
+    cubes, so stages that have them keep the safe zero heuristic.
+    """
+    relaxed = getattr(module, "relaxed_heuristic", None)
+    geometric = getattr(module, "astar_heuristic", None)
+    zero = getattr(module, "zero_heuristic", None)
+    if relaxed is None and (geometric is None or zero is None):
+        return module.solve
+
+    def solve(level, initial_state=None):
+        if relaxed is not None:
+            heuristic = relaxed
+        else:
+            heuristic = zero if getattr(level, "split_switches", ()) else geometric
+        return module.solve(level, initial_state, heuristic=heuristic)
+    return solve
+
+
 def load_backend() -> Backend:
     solvers, unavailable = {}, {}
     for label, (name, options) in _SOLVERS.items():
@@ -217,6 +239,9 @@ def load_backend() -> Backend:
             solvers[label] = None
             unavailable[label] = "not merged yet" if missing else f"{type(exc).__name__}: {exc}"
             continue
-        solvers[label] = functools.partial(module.solve, **options) if options else module.solve
+        if name == "solvers.astar":
+            solvers[label] = _astar_solver(module)
+        else:
+            solvers[label] = functools.partial(module.solve, **options) if options else module.solve
     return Backend(engine.load_level, lambda level: level.initial_state, engine.get_successors,
                    engine.is_goal, solvers, unavailable)

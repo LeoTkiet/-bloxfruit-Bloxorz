@@ -1,0 +1,23 @@
+{
+  "name": "Switch Network",
+  "description": "Four islands linked by four bridges; three toggle switches with overlapping targets must be pressed in the right order.",
+  "grid": [
+    "#####..##x.#.....",
+    "#####..#####.....",
+    "#####11#####.....",
+    "#S###11##.##44###",
+    "#####..#####44###",
+    "#####....33....#.",
+    "#####..##.##...G.",
+    "#####22#####.....",
+    "#####22##.##.....",
+    "##o##..#####.....",
+    "#####..##o##....."
+  ],
+  "switches": [
+    {"at": [9, 2], "mode": "toggle", "targets": [1, 2]},
+    {"at": [0, 9], "mode": "toggle", "targets": [3]},
+    {"at": [10, 9], "mode": "toggle", "targets": [4, 2]}
+  ],
+  "expected_bfs_length": 45
+}
