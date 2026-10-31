@@ -1,228 +1,233 @@
 group,stage,solver,found,solution_length,path_cost,expanded_nodes,peak_memory_kib,search_time_ms
-basic,01_horizontal_intro,BFS,True,2,2.0,2,2.1,0.128
-basic,01_horizontal_intro,DFS,True,2,2.0,2,1.8,0.118
-basic,01_horizontal_intro,IDS,True,2,2.0,3,1.7,0.179
-basic,01_horizontal_intro,UCS,True,2,2.0,2,1.6,0.127
-basic,01_horizontal_intro,A* h=0,True,2,2.0,2,2.5,0.14
-basic,01_horizontal_intro,A* geometric,True,2,2.0,2,1.6,0.136
-basic,01_horizontal_intro,A* relaxed,True,2,2.0,2,2.5,0.17
-basic,02_horizontal_long,BFS,True,4,4.0,4,2.6,0.281
-basic,02_horizontal_long,DFS,True,4,4.0,4,2.3,0.222
-basic,02_horizontal_long,IDS,True,4,4.0,10,2.3,0.553
-basic,02_horizontal_long,UCS,True,4,4.0,4,1.9,0.246
-basic,02_horizontal_long,A* h=0,True,4,4.0,4,1.8,0.269
-basic,02_horizontal_long,A* geometric,True,4,4.0,4,1.8,0.257
-basic,02_horizontal_long,A* relaxed,True,4,4.0,4,2.7,0.285
-basic,03_vertical_intro,BFS,True,2,2.0,2,2.4,0.151
-basic,03_vertical_intro,DFS,True,2,2.0,2,2.0,0.204
-basic,03_vertical_intro,IDS,True,2,2.0,3,2.0,0.218
-basic,03_vertical_intro,UCS,True,2,2.0,2,1.9,0.127
-basic,03_vertical_intro,A* h=0,True,2,2.0,2,1.9,0.141
-basic,03_vertical_intro,A* geometric,True,2,2.0,2,1.9,0.143
-basic,03_vertical_intro,A* relaxed,True,2,2.0,2,2.5,0.165
-basic,04_vertical_long,BFS,True,4,4.0,4,2.9,0.248
-basic,04_vertical_long,DFS,True,4,4.0,4,2.4,0.218
-basic,04_vertical_long,IDS,True,4,4.0,10,2.6,0.566
-basic,04_vertical_long,UCS,True,4,4.0,4,2.1,0.251
-basic,04_vertical_long,A* h=0,True,4,4.0,4,2.1,0.255
-basic,04_vertical_long,A* geometric,True,4,4.0,4,2.1,0.256
-basic,04_vertical_long,A* relaxed,True,4,4.0,4,2.7,0.278
-basic,05_open_corner,BFS,True,4,4.0,15,7.8,0.843
-basic,05_open_corner,DFS,True,9,9.0,9,5.9,0.562
-basic,05_open_corner,IDS,True,4,4.0,15,3.4,1.006
-basic,05_open_corner,UCS,True,4,4.0,15,5.6,0.894
-basic,05_open_corner,A* h=0,True,4,4.0,15,6.1,0.969
-basic,05_open_corner,A* geometric,True,4,4.0,11,4.0,0.724
-basic,05_open_corner,A* relaxed,True,4,4.0,7,7.1,0.491
-basic,06_orientation_loop,BFS,True,6,6.0,61,16.4,3.632
-basic,06_orientation_loop,DFS,True,26,26.0,57,24.6,3.707
-basic,06_orientation_loop,IDS,True,6,6.0,93,8.5,6.141
-basic,06_orientation_loop,UCS,True,6,6.0,61,11.3,4.079
-basic,06_orientation_loop,A* h=0,True,6,6.0,61,11.6,3.797
-basic,06_orientation_loop,A* geometric,True,6,6.0,42,9.7,2.811
-basic,06_orientation_loop,A* relaxed,True,6,6.0,11,7.4,0.858
-basic,07_wide_corner,BFS,True,4,4.0,33,12.8,2.385
-basic,07_wide_corner,DFS,True,55,55.0,70,30.7,4.119
-basic,07_wide_corner,IDS,True,4,4.0,30,5.2,1.945
-basic,07_wide_corner,UCS,True,4,4.0,33,9.9,2.043
-basic,07_wide_corner,A* h=0,True,4,4.0,33,10.0,2.283
-basic,07_wide_corner,A* geometric,True,4,4.0,11,5.4,0.818
-basic,07_wide_corner,A* relaxed,True,4,4.0,4,7.7,0.343
-basic,08_void_detour,BFS,True,5,5.0,21,5.3,1.206
-basic,08_void_detour,DFS,True,28,28.0,32,11.9,1.988
-basic,08_void_detour,IDS,True,5,5.0,29,4.0,1.706
-basic,08_void_detour,UCS,True,5,5.0,21,5.9,1.31
-basic,08_void_detour,A* h=0,True,5,5.0,21,5.9,1.406
-basic,08_void_detour,A* geometric,True,5,5.0,14,4.7,1.008
-basic,08_void_detour,A* relaxed,True,5,5.0,9,6.7,0.675
-basic,09_reverse_corner,BFS,True,4,4.0,33,14.4,2.054
-basic,09_reverse_corner,DFS,True,10,10.0,10,5.0,0.631
-basic,09_reverse_corner,IDS,True,4,4.0,30,5.2,1.935
-basic,09_reverse_corner,UCS,True,4,4.0,33,9.8,2.011
-basic,09_reverse_corner,A* h=0,True,4,4.0,33,9.9,2.333
-basic,09_reverse_corner,A* geometric,True,4,4.0,13,5.2,1.026
-basic,09_reverse_corner,A* relaxed,True,4,4.0,4,15.0,0.331
-basic,10_unsolvable_gap,BFS,False,,,1,2.1,0.05
-basic,10_unsolvable_gap,DFS,False,,,1,1.5,0.053
-basic,10_unsolvable_gap,IDS,False,,,1,1.4,0.051
-basic,10_unsolvable_gap,UCS,False,,,1,1.5,0.052
-basic,10_unsolvable_gap,A* h=0,False,,,1,1.5,0.052
-basic,10_unsolvable_gap,A* geometric,False,,,1,1.5,0.051
-basic,10_unsolvable_gap,A* relaxed,False,,,1,2.4,0.055
-advanced,01_fragile_corridor,BFS,True,4,4.0,4,2.4,0.256
-advanced,01_fragile_corridor,DFS,True,4,4.0,4,2.3,0.237
-advanced,01_fragile_corridor,IDS,True,4,4.0,10,2.3,0.619
-advanced,01_fragile_corridor,UCS,True,4,4.0,4,1.9,0.284
-advanced,01_fragile_corridor,A* h=0,True,4,4.0,4,1.8,0.551
-advanced,01_fragile_corridor,A* geometric,True,4,4.0,4,1.8,0.301
-advanced,01_fragile_corridor,A* relaxed,True,4,4.0,4,2.7,0.302
-advanced,02_fragile_band,BFS,True,6,6.0,50,8.2,3.225
-advanced,02_fragile_band,DFS,True,34,34.0,47,14.8,3.788
-advanced,02_fragile_band,IDS,True,6,6.0,85,6.6,5.659
-advanced,02_fragile_band,UCS,True,6,6.0,50,9.9,3.417
-advanced,02_fragile_band,A* h=0,True,6,6.0,50,9.8,3.516
-advanced,02_fragile_band,A* geometric,True,6,6.0,26,6.2,1.906
-advanced,02_fragile_band,A* relaxed,True,6,6.0,11,7.1,0.923
-advanced,03_soft_switch_bridge,BFS,True,4,4.0,6,3.1,0.398
-advanced,03_soft_switch_bridge,DFS,True,4,4.0,6,3.2,0.395
-advanced,03_soft_switch_bridge,IDS,True,4,4.0,13,3.5,0.904
-advanced,03_soft_switch_bridge,UCS,True,4,4.0,6,2.8,0.777
-advanced,03_soft_switch_bridge,A* h=0,True,4,4.0,6,2.8,0.921
-advanced,03_soft_switch_bridge,A* geometric,True,4,4.0,4,2.5,0.377
-advanced,03_soft_switch_bridge,A* relaxed,True,4,4.0,4,2.7,0.37
-advanced,04_heavy_switch_bridge,BFS,True,10,10.0,79,14.4,5.15
-advanced,04_heavy_switch_bridge,DFS,True,23,23.0,26,10.4,1.769
-advanced,04_heavy_switch_bridge,IDS,True,10,10.0,299,11.5,22.0
-advanced,04_heavy_switch_bridge,UCS,True,10,10.0,79,17.9,6.189
-advanced,04_heavy_switch_bridge,A* h=0,True,10,10.0,79,17.8,6.121
-advanced,04_heavy_switch_bridge,A* geometric,True,10,10.0,71,12.0,5.978
-advanced,04_heavy_switch_bridge,A* relaxed,True,10,10.0,35,12.1,2.926
-advanced,05_toggle_two_bridges,BFS,True,6,6.0,7,3.2,0.443
-advanced,05_toggle_two_bridges,DFS,True,6,6.0,7,3.8,0.494
-advanced,05_toggle_two_bridges,IDS,True,6,6.0,21,3.1,1.329
-advanced,05_toggle_two_bridges,UCS,True,6,6.0,7,2.8,0.465
-advanced,05_toggle_two_bridges,A* h=0,True,6,6.0,7,2.8,0.518
-advanced,05_toggle_two_bridges,A* geometric,True,6,6.0,6,2.4,0.442
-advanced,05_toggle_two_bridges,A* relaxed,True,6,6.0,6,3.0,0.475
-advanced,06_permanent_return,BFS,True,6,6.0,6,2.9,0.399
-advanced,06_permanent_return,DFS,True,6,6.0,6,3.3,0.395
-advanced,06_permanent_return,IDS,True,6,6.0,21,3.1,1.356
-advanced,06_permanent_return,UCS,True,6,6.0,6,2.5,0.409
-advanced,06_permanent_return,A* h=0,True,6,6.0,6,2.5,0.469
-advanced,06_permanent_return,A* geometric,True,6,6.0,6,2.5,0.425
-advanced,06_permanent_return,A* relaxed,True,6,6.0,6,2.7,0.43
-advanced,07_advanced_mix,BFS,True,13,13.0,106,18.9,7.254
-advanced,07_advanced_mix,DFS,True,81,81.0,111,45.3,9.07
-advanced,07_advanced_mix,IDS,True,13,13.0,262,15.9,22.057
-advanced,07_advanced_mix,UCS,True,13,13.0,106,21.7,7.469
-advanced,07_advanced_mix,A* h=0,True,13,13.0,106,22.7,8.78
-advanced,07_advanced_mix,A* geometric,True,13,13.0,65,18.5,5.209
-advanced,07_advanced_mix,A* relaxed,True,13,13.0,25,8.8,1.964
-advanced,08_unsolvable_fragile,BFS,False,,,2,2.3,0.11
-advanced,08_unsolvable_fragile,DFS,False,,,2,1.9,0.148
-advanced,08_unsolvable_fragile,IDS,False,,,3,1.8,0.201
-advanced,08_unsolvable_fragile,UCS,False,,,2,1.8,0.134
-advanced,08_unsolvable_fragile,A* h=0,False,,,2,1.7,0.132
-advanced,08_unsolvable_fragile,A* geometric,False,,,2,1.7,0.128
-advanced,08_unsolvable_fragile,A* relaxed,False,,,2,2.7,0.13
-advanced,09_unsolvable_heavy,BFS,False,,,4,2.5,0.227
-advanced,09_unsolvable_heavy,DFS,False,,,4,2.4,0.237
-advanced,09_unsolvable_heavy,IDS,False,,,10,2.4,0.623
-advanced,09_unsolvable_heavy,UCS,False,,,4,2.0,0.251
-advanced,09_unsolvable_heavy,A* h=0,False,,,4,2.0,0.267
-advanced,09_unsolvable_heavy,A* geometric,False,,,4,2.0,0.262
-advanced,09_unsolvable_heavy,A* relaxed,False,,,4,3.0,0.279
-split,01_split_intro,BFS,True,4,4.0,6,3.0,0.275
-split,01_split_intro,DFS,True,4,4.0,5,3.0,0.241
-split,01_split_intro,IDS,True,4,4.0,10,2.3,0.502
-split,01_split_intro,UCS,True,4,4.5,8,3.3,0.382
-split,01_split_intro,A* h=0,True,4,4.0,6,2.6,0.359
-split,01_split_intro,A* relaxed,True,4,4.0,7,3.1,0.713
-split,02_split_reunion,BFS,True,31,31.0,4857,1004.1,180.069
-split,02_split_reunion,DFS,True,1629,1629.0,1984,1834.4,89.171
-split,02_split_reunion,IDS,True,31,31.0,107147,827.6,4122.852
-split,02_split_reunion,UCS,True,31,31.0,4864,1448.4,244.71
-split,02_split_reunion,A* h=0,True,31,31.0,4857,1227.7,238.32
-split,02_split_reunion,A* relaxed,True,31,31.0,4873,1193.0,229.731
-split,03_fragile_split,BFS,True,31,31.0,6401,1382.3,252.043
-split,03_fragile_split,DFS,True,223,223.0,244,165.7,12.021
-split,03_fragile_split,IDS,True,31,31.0,108653,1224.5,4251.05
-split,03_fragile_split,UCS,True,31,31.0,6477,2169.3,330.83
-split,03_fragile_split,A* h=0,True,31,31.0,6401,1872.5,333.292
-split,03_fragile_split,A* relaxed,True,31,31.0,6337,1852.6,321.968
-split,04_heavy_split_bridges,BFS,True,33,33.0,3802,755.6,171.859
-split,04_heavy_split_bridges,DFS,True,252,252.0,2128,1493.8,118.359
-split,04_heavy_split_bridges,IDS,True,33,33.0,298655,741.4,16072.666
-split,04_heavy_split_bridges,UCS,True,33,33.0,3797,1124.8,237.482
-split,04_heavy_split_bridges,A* h=0,True,33,33.0,3802,992.4,224.915
-split,04_heavy_split_bridges,A* relaxed,True,33,33.0,3581,989.0,212.895
-hard,01_grand_maze,BFS,True,35,35.0,402,52.6,23.897
-hard,01_grand_maze,DFS,True,126,126.0,369,181.7,23.982
-hard,01_grand_maze,IDS,True,35,35.0,42525,61.7,2862.519
-hard,01_grand_maze,UCS,True,35,35.0,402,76.3,28.952
-hard,01_grand_maze,A* h=0,True,35,35.0,402,77.2,28.774
-hard,01_grand_maze,A* geometric,True,35,35.0,396,78.4,30.318
-hard,01_grand_maze,A* relaxed,True,35,35.0,43,39.2,4.299
-hard,02_fragile_bands,BFS,True,37,37.0,361,52.6,25.919
-hard,02_fragile_bands,DFS,True,181,181.0,288,83.6,21.669
-hard,02_fragile_bands,IDS,True,37,37.0,19757,62.9,1448.185
-hard,02_fragile_bands,UCS,True,37,37.0,361,76.4,26.882
-hard,02_fragile_bands,A* h=0,True,37,37.0,361,77.2,29.219
-hard,02_fragile_bands,A* geometric,True,37,37.0,300,51.3,24.319
-hard,02_fragile_bands,A* relaxed,True,37,37.0,207,63.6,17.744
-hard,03_switch_network,BFS,True,45,45.0,1477,253.9,116.041
-hard,03_switch_network,DFS,True,701,701.0,1454,637.2,125.335
-hard,03_switch_network,IDS,True,45,45.0,268560,219.1,21648.559
-hard,03_switch_network,UCS,True,45,45.0,1477,350.0,132.252
-hard,03_switch_network,A* h=0,True,45,45.0,1477,351.7,139.341
-hard,03_switch_network,A* geometric,True,45,45.0,1132,251.9,102.728
-hard,03_switch_network,A* relaxed,True,45,45.0,763,189.8,68.822
-hard,04_grand_finale,BFS,True,46,46.0,1280,182.3,101.792
-hard,04_grand_finale,DFS,True,477,477.0,920,421.4,85.87
-hard,04_grand_finale,IDS,True,46,46.0,277771,142.6,22294.04
-hard,04_grand_finale,UCS,True,46,46.0,1280,226.7,111.425
-hard,04_grand_finale,A* h=0,True,46,46.0,1280,227.3,123.248
-hard,04_grand_finale,A* geometric,True,46,46.0,1016,188.3,95.359
-hard,04_grand_finale,A* relaxed,True,46,46.0,799,209.9,102.525
-demo,03_classic_stage1,BFS,True,7,7.0,64,10.2,4.569
-demo,03_classic_stage1,DFS,True,45,45.0,56,19.2,5.223
-demo,03_classic_stage1,IDS,True,7,7.0,124,9.2,13.863
-demo,03_classic_stage1,UCS,True,7,7.0,64,11.4,4.264
-demo,03_classic_stage1,A* h=0,True,7,7.0,64,11.4,5.019
-demo,03_classic_stage1,A* geometric,True,7,7.0,26,8.9,2.083
-demo,03_classic_stage1,A* relaxed,True,7,7.0,14,11.7,1.212
-demo,04_fragile,BFS,True,18,18.0,61,8.6,4.256
-demo,04_fragile,DFS,True,40,40.0,48,14.7,3.677
-demo,04_fragile,IDS,True,18,18.0,874,11.1,66.726
-demo,04_fragile,UCS,True,18,18.0,61,10.1,4.221
-demo,04_fragile,A* h=0,True,18,18.0,61,10.1,4.535
-demo,04_fragile,A* geometric,True,18,18.0,61,10.1,4.75
-demo,04_fragile,A* relaxed,True,18,18.0,47,11.8,3.767
-demo,05_soft_switch_bridge,BFS,True,7,7.0,35,7.8,2.307
-demo,05_soft_switch_bridge,DFS,True,37,37.0,86,27.8,5.965
-demo,05_soft_switch_bridge,IDS,True,7,7.0,60,5.7,4.655
-demo,05_soft_switch_bridge,UCS,True,7,7.0,35,9.5,2.625
-demo,05_soft_switch_bridge,A* h=0,True,7,7.0,35,9.4,3.072
-demo,05_soft_switch_bridge,A* geometric,True,7,7.0,13,4.2,1.134
-demo,05_soft_switch_bridge,A* relaxed,True,7,7.0,11,7.0,1.273
-demo,06_heavy_switch,BFS,True,18,18.0,80,10.8,5.416
-demo,06_heavy_switch,DFS,True,26,26.0,65,14.1,4.097
-demo,06_heavy_switch,IDS,True,18,18.0,582,12.7,40.362
-demo,06_heavy_switch,UCS,True,18,18.0,80,11.8,5.679
-demo,06_heavy_switch,A* h=0,True,18,18.0,80,11.8,6.262
-demo,06_heavy_switch,A* geometric,True,18,18.0,62,10.9,4.482
-demo,06_heavy_switch,A* relaxed,True,18,18.0,30,8.8,2.63
-demo,08_showcase,BFS,True,24,24.0,159,19.4,10.764
-demo,08_showcase,DFS,True,135,135.0,190,57.9,14.26
-demo,08_showcase,IDS,True,24,24.0,4931,23.6,386.0
-demo,08_showcase,UCS,True,24,24.0,159,24.5,12.759
-demo,08_showcase,A* h=0,True,24,24.0,159,24.7,13.072
-demo,08_showcase,A* geometric,True,24,24.0,145,23.5,12.973
-demo,08_showcase,A* relaxed,True,24,24.0,115,24.6,13.618
-demo,09_unsolvable,BFS,False,,,3,2.4,0.166
-demo,09_unsolvable,DFS,False,,,3,2.1,0.165
-demo,09_unsolvable,IDS,False,,,6,2.2,0.328
-demo,09_unsolvable,UCS,False,,,3,1.9,0.163
-demo,09_unsolvable,A* h=0,False,,,3,1.9,0.173
-demo,09_unsolvable,A* geometric,False,,,3,1.9,0.174
-demo,09_unsolvable,A* relaxed,False,,,3,2.7,0.177
+basic,01_horizontal_intro,BFS,True,2,2.0,2,2.1,0.171
+basic,01_horizontal_intro,DFS,True,2,2.0,2,1.8,0.165
+basic,01_horizontal_intro,IDS,True,2,2.0,3,1.7,0.216
+basic,01_horizontal_intro,UCS,True,2,2.0,2,1.6,0.174
+basic,01_horizontal_intro,A* h=0,True,2,2.0,2,2.5,0.178
+basic,01_horizontal_intro,A* geometric,True,2,2.0,2,1.6,0.168
+basic,01_horizontal_intro,A* relaxed,True,2,2.0,2,2.5,0.191
+basic,02_horizontal_long,BFS,True,4,4.0,4,2.6,0.304
+basic,02_horizontal_long,DFS,True,4,4.0,4,2.3,0.277
+basic,02_horizontal_long,IDS,True,4,4.0,10,2.3,0.674
+basic,02_horizontal_long,UCS,True,4,4.0,4,1.9,0.796
+basic,02_horizontal_long,A* h=0,True,4,4.0,4,1.8,0.618
+basic,02_horizontal_long,A* geometric,True,4,4.0,4,1.8,0.718
+basic,02_horizontal_long,A* relaxed,True,4,4.0,4,2.7,0.407
+basic,03_vertical_intro,BFS,True,2,2.0,2,2.4,0.162
+basic,03_vertical_intro,DFS,True,2,2.0,2,2.0,0.159
+basic,03_vertical_intro,IDS,True,2,2.0,3,2.0,0.215
+basic,03_vertical_intro,UCS,True,2,2.0,2,1.9,0.156
+basic,03_vertical_intro,A* h=0,True,2,2.0,2,1.9,0.176
+basic,03_vertical_intro,A* geometric,True,2,2.0,2,1.9,0.179
+basic,03_vertical_intro,A* relaxed,True,2,2.0,2,2.5,0.208
+basic,04_vertical_long,BFS,True,4,4.0,4,2.9,0.299
+basic,04_vertical_long,DFS,True,4,4.0,4,2.4,0.345
+basic,04_vertical_long,IDS,True,4,4.0,10,2.6,0.95
+basic,04_vertical_long,UCS,True,4,4.0,4,2.1,0.349
+basic,04_vertical_long,A* h=0,True,4,4.0,4,2.1,0.373
+basic,04_vertical_long,A* geometric,True,4,4.0,4,2.1,0.331
+basic,04_vertical_long,A* relaxed,True,4,4.0,4,2.7,0.345
+basic,05_open_corner,BFS,True,4,4.0,15,7.8,1.052
+basic,05_open_corner,DFS,True,9,9.0,9,5.9,0.65
+basic,05_open_corner,IDS,True,4,4.0,15,3.4,1.826
+basic,05_open_corner,UCS,True,4,4.0,15,5.6,1.571
+basic,05_open_corner,A* h=0,True,4,4.0,15,6.1,1.313
+basic,05_open_corner,A* geometric,True,4,4.0,11,4.0,1.166
+basic,05_open_corner,A* relaxed,True,4,4.0,7,7.1,1.228
+basic,06_orientation_loop,BFS,True,6,6.0,61,16.4,4.87
+basic,06_orientation_loop,DFS,True,26,26.0,57,24.6,4.731
+basic,06_orientation_loop,IDS,True,6,6.0,93,8.5,7.631
+basic,06_orientation_loop,UCS,True,6,6.0,61,11.3,5.543
+basic,06_orientation_loop,A* h=0,True,6,6.0,61,11.6,5.3
+basic,06_orientation_loop,A* geometric,True,6,6.0,42,9.7,3.438
+basic,06_orientation_loop,A* relaxed,True,6,6.0,11,7.4,1.817
+basic,07_wide_corner,BFS,True,4,4.0,33,12.8,4.107
+basic,07_wide_corner,DFS,True,55,55.0,70,30.7,5.716
+basic,07_wide_corner,IDS,True,4,4.0,30,5.2,2.569
+basic,07_wide_corner,UCS,True,4,4.0,33,9.9,3.012
+basic,07_wide_corner,A* h=0,True,4,4.0,33,10.0,3.165
+basic,07_wide_corner,A* geometric,True,4,4.0,11,5.4,0.986
+basic,07_wide_corner,A* relaxed,True,4,4.0,4,7.7,0.492
+basic,08_void_detour,BFS,True,5,5.0,21,5.3,1.828
+basic,08_void_detour,DFS,True,28,28.0,32,11.9,3.147
+basic,08_void_detour,IDS,True,5,5.0,29,4.0,4.113
+basic,08_void_detour,UCS,True,5,5.0,21,5.9,1.837
+basic,08_void_detour,A* h=0,True,5,5.0,21,5.9,3.836
+basic,08_void_detour,A* geometric,True,5,5.0,14,4.7,1.364
+basic,08_void_detour,A* relaxed,True,5,5.0,9,6.7,1.552
+basic,09_reverse_corner,BFS,True,4,4.0,33,14.4,2.508
+basic,09_reverse_corner,DFS,True,10,10.0,10,5.0,0.875
+basic,09_reverse_corner,IDS,True,4,4.0,30,5.2,3.474
+basic,09_reverse_corner,UCS,True,4,4.0,33,9.8,2.539
+basic,09_reverse_corner,A* h=0,True,4,4.0,33,9.9,3.246
+basic,09_reverse_corner,A* geometric,True,4,4.0,13,5.2,1.367
+basic,09_reverse_corner,A* relaxed,True,4,4.0,4,15.0,0.991
+basic,10_unsolvable_gap,BFS,False,,,1,2.1,0.065
+basic,10_unsolvable_gap,DFS,False,,,1,1.5,0.115
+basic,10_unsolvable_gap,IDS,False,,,1,1.4,0.068
+basic,10_unsolvable_gap,UCS,False,,,1,1.5,0.251
+basic,10_unsolvable_gap,A* h=0,False,,,1,1.5,0.141
+basic,10_unsolvable_gap,A* geometric,False,,,1,1.5,0.135
+basic,10_unsolvable_gap,A* relaxed,False,,,1,2.4,0.095
+advanced,01_fragile_corridor,BFS,True,4,4.0,4,2.4,0.321
+advanced,01_fragile_corridor,DFS,True,4,4.0,4,2.3,0.297
+advanced,01_fragile_corridor,IDS,True,4,4.0,10,2.3,0.733
+advanced,01_fragile_corridor,UCS,True,4,4.0,4,1.9,0.618
+advanced,01_fragile_corridor,A* h=0,True,4,4.0,4,1.8,0.93
+advanced,01_fragile_corridor,A* geometric,True,4,4.0,4,1.8,0.879
+advanced,01_fragile_corridor,A* relaxed,True,4,4.0,4,2.7,0.661
+advanced,02_fragile_band,BFS,True,6,6.0,50,8.2,6.482
+advanced,02_fragile_band,DFS,True,34,34.0,47,14.8,4.352
+advanced,02_fragile_band,IDS,True,6,6.0,85,6.6,9.168
+advanced,02_fragile_band,UCS,True,6,6.0,50,9.9,4.756
+advanced,02_fragile_band,A* h=0,True,6,6.0,50,9.8,5.271
+advanced,02_fragile_band,A* geometric,True,6,6.0,26,6.2,2.393
+advanced,02_fragile_band,A* relaxed,True,6,6.0,11,7.1,1.191
+advanced,03_soft_switch_bridge,BFS,True,4,4.0,6,3.1,0.517
+advanced,03_soft_switch_bridge,DFS,True,4,4.0,6,3.2,0.481
+advanced,03_soft_switch_bridge,IDS,True,4,4.0,13,3.5,2.903
+advanced,03_soft_switch_bridge,UCS,True,4,4.0,6,2.8,0.859
+advanced,03_soft_switch_bridge,A* h=0,True,4,4.0,6,2.8,1.12
+advanced,03_soft_switch_bridge,A* geometric,True,4,4.0,4,2.5,0.412
+advanced,03_soft_switch_bridge,A* relaxed,True,4,4.0,4,2.7,0.475
+advanced,04_heavy_switch_bridge,BFS,True,10,10.0,79,14.4,7.761
+advanced,04_heavy_switch_bridge,DFS,True,23,23.0,26,10.4,2.998
+advanced,04_heavy_switch_bridge,IDS,True,10,10.0,299,11.5,28.371
+advanced,04_heavy_switch_bridge,UCS,True,10,10.0,79,17.9,9.161
+advanced,04_heavy_switch_bridge,A* h=0,True,10,10.0,79,17.8,8.905
+advanced,04_heavy_switch_bridge,A* geometric,True,10,10.0,71,12.0,6.936
+advanced,04_heavy_switch_bridge,A* relaxed,True,10,10.0,35,12.1,5.019
+advanced,05_toggle_two_bridges,BFS,True,6,6.0,7,3.2,0.645
+advanced,05_toggle_two_bridges,DFS,True,6,6.0,7,3.8,0.639
+advanced,05_toggle_two_bridges,IDS,True,6,6.0,21,3.1,2.195
+advanced,05_toggle_two_bridges,UCS,True,6,6.0,7,2.8,0.915
+advanced,05_toggle_two_bridges,A* h=0,True,6,6.0,7,2.8,0.824
+advanced,05_toggle_two_bridges,A* geometric,True,6,6.0,6,2.4,0.556
+advanced,05_toggle_two_bridges,A* relaxed,True,6,6.0,6,3.0,0.561
+advanced,06_permanent_return,BFS,True,6,6.0,6,2.9,0.467
+advanced,06_permanent_return,DFS,True,6,6.0,6,3.3,0.459
+advanced,06_permanent_return,IDS,True,6,6.0,21,3.1,1.681
+advanced,06_permanent_return,UCS,True,6,6.0,6,2.5,0.498
+advanced,06_permanent_return,A* h=0,True,6,6.0,6,2.5,0.974
+advanced,06_permanent_return,A* geometric,True,6,6.0,6,2.5,1.296
+advanced,06_permanent_return,A* relaxed,True,6,6.0,6,2.7,0.93
+advanced,07_advanced_mix,BFS,True,13,13.0,106,18.9,11.611
+advanced,07_advanced_mix,DFS,True,81,81.0,111,45.3,11.371
+advanced,07_advanced_mix,IDS,True,13,13.0,262,15.9,25.459
+advanced,07_advanced_mix,UCS,True,13,13.0,106,21.7,11.78
+advanced,07_advanced_mix,A* h=0,True,13,13.0,106,22.7,11.625
+advanced,07_advanced_mix,A* geometric,True,13,13.0,65,18.5,6.837
+advanced,07_advanced_mix,A* relaxed,True,13,13.0,25,8.8,4.734
+advanced,08_unsolvable_fragile,BFS,False,,,2,2.3,0.491
+advanced,08_unsolvable_fragile,DFS,False,,,2,1.9,0.316
+advanced,08_unsolvable_fragile,IDS,False,,,3,1.8,0.434
+advanced,08_unsolvable_fragile,UCS,False,,,2,1.8,0.245
+advanced,08_unsolvable_fragile,A* h=0,False,,,2,1.7,0.266
+advanced,08_unsolvable_fragile,A* geometric,False,,,2,1.7,0.277
+advanced,08_unsolvable_fragile,A* relaxed,False,,,2,2.7,0.188
+advanced,09_unsolvable_heavy,BFS,False,,,4,2.5,0.352
+advanced,09_unsolvable_heavy,DFS,False,,,4,2.4,0.309
+advanced,09_unsolvable_heavy,IDS,False,,,10,2.4,0.902
+advanced,09_unsolvable_heavy,UCS,False,,,4,2.0,0.359
+advanced,09_unsolvable_heavy,A* h=0,False,,,4,2.0,0.378
+advanced,09_unsolvable_heavy,A* geometric,False,,,4,2.0,0.386
+advanced,09_unsolvable_heavy,A* relaxed,False,,,4,3.0,0.379
+split,01_split_intro,BFS,True,4,4.0,6,3.0,0.471
+split,01_split_intro,DFS,True,4,4.0,5,3.0,0.406
+split,01_split_intro,IDS,True,4,4.0,10,2.3,0.704
+split,01_split_intro,UCS,True,4,4.5,8,3.3,0.91
+split,01_split_intro,A* h=0,True,4,4.0,6,2.6,0.509
+split,01_split_intro,A* relaxed,True,4,4.0,7,3.1,0.66
+split,02_split_reunion,BFS,True,31,31.0,4857,1004.1,365.814
+split,02_split_reunion,DFS,True,1629,1629.0,1984,1834.4,163.61
+split,02_split_reunion,IDS,True,31,31.0,107147,827.7,22306.712
+split,02_split_reunion,UCS,True,31,31.0,4864,1448.4,1255.347
+split,02_split_reunion,A* h=0,True,31,31.0,4857,1227.7,1331.979
+split,02_split_reunion,A* relaxed,True,31,31.0,4873,1193.0,1232.766
+split,03_fragile_split,BFS,True,31,31.0,6401,1382.3,1640.012
+split,03_fragile_split,DFS,True,223,223.0,244,165.7,69.355
+split,03_fragile_split,IDS,True,31,31.0,108653,1224.5,23096.125
+split,03_fragile_split,UCS,True,31,31.0,6477,2169.3,1669.29
+split,03_fragile_split,A* h=0,True,31,31.0,6401,1872.5,1706.608
+split,03_fragile_split,A* relaxed,True,31,31.0,6337,1852.6,1713.161
+split,04_heavy_split_bridges,BFS,True,29,29.0,8002,1732.5,1774.26
+split,04_heavy_split_bridges,DFS,True,254,254.0,3710,2819.0,1128.412
+split,04_heavy_split_bridges,IDS,True,29,29.0,268206,1528.8,65941.248
+split,04_heavy_split_bridges,UCS,True,29,29.0,8083,2603.3,2501.582
+split,04_heavy_split_bridges,A* h=0,True,29,29.0,8002,2262.8,2331.797
+split,04_heavy_split_bridges,A* relaxed,True,29,29.0,7872,2271.8,2175.79
+hard,01_grand_maze,BFS,True,35,35.0,402,52.6,94.803
+hard,01_grand_maze,DFS,True,126,126.0,369,133.8,100.223
+hard,01_grand_maze,IDS,True,35,35.0,42525,61.7,10488.065
+hard,01_grand_maze,UCS,True,35,35.0,402,76.3,116.548
+hard,01_grand_maze,A* h=0,True,35,35.0,402,77.2,119.745
+hard,01_grand_maze,A* geometric,True,35,35.0,396,78.4,55.179
+hard,01_grand_maze,A* relaxed,True,35,35.0,43,39.2,6.106
+hard,02_fragile_bands,BFS,True,37,37.0,361,52.6,34.12
+hard,02_fragile_bands,DFS,True,181,181.0,288,83.6,28.721
+hard,02_fragile_bands,IDS,True,37,37.0,19757,62.9,2375.951
+hard,02_fragile_bands,UCS,True,37,37.0,361,76.4,41.961
+hard,02_fragile_bands,A* h=0,True,37,37.0,361,77.2,47.926
+hard,02_fragile_bands,A* geometric,True,37,37.0,300,51.3,38.741
+hard,02_fragile_bands,A* relaxed,True,37,37.0,207,63.6,25.453
+hard,03_switch_network,BFS,True,45,45.0,1477,253.9,163.331
+hard,03_switch_network,DFS,True,701,701.0,1454,689.5,168.738
+hard,03_switch_network,IDS,True,45,45.0,268560,219.1,55278.416
+hard,03_switch_network,UCS,True,45,45.0,1477,352.1,196.742
+hard,03_switch_network,A* h=0,True,45,45.0,1477,356.7,191.159
+hard,03_switch_network,A* geometric,True,45,45.0,1132,204.8,147.45
+hard,03_switch_network,A* relaxed,True,45,45.0,763,189.4,101.077
+hard,04_grand_finale,BFS,True,46,46.0,1280,182.3,148.819
+hard,04_grand_finale,DFS,True,477,477.0,920,293.1,108.693
+hard,04_grand_finale,IDS,True,46,46.0,277771,165.0,29697.55
+hard,04_grand_finale,UCS,True,46,46.0,1280,260.3,155.414
+hard,04_grand_finale,A* h=0,True,46,46.0,1280,232.3,149.944
+hard,04_grand_finale,A* geometric,True,46,46.0,1016,188.3,116.724
+hard,04_grand_finale,A* relaxed,True,46,46.0,799,210.8,104.806
+demo,03_classic_stage1,BFS,True,7,7.0,64,10.2,4.978
+demo,03_classic_stage1,DFS,True,45,45.0,56,19.8,4.208
+demo,03_classic_stage1,IDS,True,7,7.0,124,9.2,9.664
+demo,03_classic_stage1,UCS,True,7,7.0,64,11.4,5.475
+demo,03_classic_stage1,A* h=0,True,7,7.0,64,11.4,5.351
+demo,03_classic_stage1,A* geometric,True,7,7.0,26,8.9,2.165
+demo,03_classic_stage1,A* relaxed,True,7,7.0,14,11.7,2.825
+demo,04_fragile,BFS,True,18,18.0,61,8.6,6.953
+demo,04_fragile,DFS,True,40,40.0,48,14.7,3.583
+demo,04_fragile,IDS,True,18,18.0,874,11.1,106.078
+demo,04_fragile,UCS,True,18,18.0,61,10.1,6.127
+demo,04_fragile,A* h=0,True,18,18.0,61,10.1,6.586
+demo,04_fragile,A* geometric,True,18,18.0,61,10.1,5.77
+demo,04_fragile,A* relaxed,True,18,18.0,47,11.8,4.139
+demo,05_soft_switch_bridge,BFS,True,7,7.0,35,7.8,3.81
+demo,05_soft_switch_bridge,DFS,True,37,37.0,86,28.3,6.797
+demo,05_soft_switch_bridge,IDS,True,7,7.0,60,5.7,8.495
+demo,05_soft_switch_bridge,UCS,True,7,7.0,35,9.5,3.27
+demo,05_soft_switch_bridge,A* h=0,True,7,7.0,35,9.4,3.641
+demo,05_soft_switch_bridge,A* geometric,True,7,7.0,13,4.2,1.42
+demo,05_soft_switch_bridge,A* relaxed,True,7,7.0,11,7.0,1.084
+demo,06_heavy_switch,BFS,True,18,18.0,80,10.8,7.019
+demo,06_heavy_switch,DFS,True,26,26.0,65,14.1,5.268
+demo,06_heavy_switch,IDS,True,18,18.0,582,12.7,60.528
+demo,06_heavy_switch,UCS,True,18,18.0,80,11.8,8.844
+demo,06_heavy_switch,A* h=0,True,18,18.0,80,11.8,7.667
+demo,06_heavy_switch,A* geometric,True,18,18.0,62,10.9,5.41
+demo,06_heavy_switch,A* relaxed,True,18,18.0,30,8.8,2.738
+demo,07_split,BFS,True,18,18.0,514,61.5,25.147
+demo,07_split,DFS,True,25,25.0,38,11.9,2.377
+demo,07_split,IDS,True,18,18.0,4288,58.5,205.215
+demo,07_split,UCS,True,18,18.0,531,109.4,28.324
+demo,07_split,A* h=0,True,18,18.0,514,90.7,33.263
+demo,07_split,A* relaxed,True,18,18.0,531,93.5,32.349
+demo,08_showcase,BFS,True,23,23.0,943,160.8,59.635
+demo,08_showcase,DFS,True,347,347.0,440,250.7,31.82
+demo,08_showcase,IDS,True,23,23.0,11637,110.8,931.119
+demo,08_showcase,UCS,True,23,23.0,884,215.0,66.92
+demo,08_showcase,A* h=0,True,23,23.0,943,204.6,69.734
+demo,08_showcase,A* relaxed,True,23,23.0,908,198.0,77.3
+demo,09_unsolvable,BFS,False,,,3,2.4,0.208
+demo,09_unsolvable,DFS,False,,,3,2.1,0.212
+demo,09_unsolvable,IDS,False,,,6,2.2,0.403
+demo,09_unsolvable,UCS,False,,,3,1.9,0.204
+demo,09_unsolvable,A* h=0,False,,,3,1.9,0.216
+demo,09_unsolvable,A* geometric,False,,,3,1.9,0.22
+demo,09_unsolvable,A* relaxed,False,,,3,2.7,0.224

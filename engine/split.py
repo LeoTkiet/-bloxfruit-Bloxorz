@@ -1,4 +1,15 @@
-"""Split-block movement, switch triggering, and merge mechanics."""
+"""Split-block movement, switch triggering, and merge mechanics.
+
+Unit-cube rules (shared with ``engine.tiles``):
+
+* a cube may step onto a floor tile or a bridge that is open under the
+  current bridge mask, and fragile tiles carry it;
+* a cube that lands on a soft switch fires it once; heavy switches need an
+  intact standing block and ignore cubes;
+* if that switch closes a bridge under either cube, the cube falls and the
+  move is illegal (the same rule as for an intact block);
+* the merged block keeps the bridge mask produced by the last cube move.
+"""
 
 from __future__ import annotations
 
@@ -120,18 +131,27 @@ def try_move_split(level: Level, state: GameState, action: Action) -> GameState 
     else:
         return None
 
-    # Boundary and floor tile check
+    # Boundary and support check: a floor tile or a bridge open under the current mask
     if not level.contains(next_pos):
         return None
-    if next_pos not in level.floor_tiles:
+    if not level.tiles.is_cell_supported(next_pos, level.floor_tiles, state.bridge_mask):
         return None
 
     # Cannot occupy the exact same cell
     if next_pos == other_pos:
         return None
 
+    # A unit cube is light: landing on a soft switch fires it, a heavy switch ignores it.
+    # Fragile tiles carry a cube, so no fragile check is needed here.
+    bridge_mask = level.tiles.apply_triggers((next_pos,), state.bridge_mask, standing=False)
+    if bridge_mask != state.bridge_mask:
+        # A bridge closed under either cube makes that cube fall, like an intact block
+        for cube in (next_pos, other_pos):
+            if not level.tiles.is_cell_supported(cube, level.floor_tiles, bridge_mask):
+                return None
+
     # Check if the cubes become adjacent and merge back into an intact block
-    merged = check_merge(next_pos, other_pos, bridge_mask=state.bridge_mask)
+    merged = check_merge(next_pos, other_pos, bridge_mask=bridge_mask)
     if merged is not None:
         return merged
 
@@ -144,7 +164,7 @@ def try_move_split(level: Level, state: GameState, action: Action) -> GameState 
     return GameState.split(
         cube_positions=new_cube_positions,
         active_cube=active_idx,
-        bridge_mask=state.bridge_mask,
+        bridge_mask=bridge_mask,
     )
 
 

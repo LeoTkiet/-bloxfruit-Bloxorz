@@ -13,10 +13,15 @@ from tkinter import filedialog, messagebox, ttk
 from . import theme
 from .backend import (BRIDGE, FLOOR, FRAGILE, GOAL, HEAVY, SOFT, SOLVER_LABELS, SPLIT,
                       SPLIT_SWITCH, SWITCH, Backend, InvalidSolution, Trace, level_view,
-                      load_backend, stage_description, state_view)
+                      keep_piece_order, load_backend, stage_description, state_view)
 from .board_view import BoardView, Legend
 
 STAGE_GROUPS = ("basic", "advanced", "split", "hard", "demo")   # play order of the levels/ sub-folders
+# The stage list, in the order of the demo video; Open... still loads every other stage file.
+DEMO_STAGES = ("demo/03_classic_stage1", "demo/04_fragile", "demo/05_soft_switch_bridge",
+               "demo/06_heavy_switch", "split/01_split_intro", "demo/08_showcase",
+               "advanced/02_fragile_band", "hard/01_grand_maze", "split/04_heavy_split_bridges",
+               "demo/09_unsolvable")
 
 ORIENTATION_TEXT = {"STANDING": "Standing", "HORIZONTAL": "Lying horizontally",
                     "VERTICAL": "Lying vertically"}
@@ -72,6 +77,11 @@ def find_stages(levels_dir: Path) -> list[Path]:
     return sorted(levels_dir.rglob("*.json"), key=order)
 
 
+def demo_stages(levels_dir: Path) -> list[Path]:
+    paths = (levels_dir / f"{name}.json" for name in DEMO_STAGES)
+    return [path for path in paths if path.is_file()]
+
+
 def _fmt_number(value) -> str:
     if value is None:
         return "–"
@@ -96,10 +106,11 @@ class App:
     def __init__(self, root: tk.Tk, backend: Backend, levels_dir: Path, stage: Path | None = None):
         self.root, self.backend = root, backend
         self.levels_dir = levels_dir
-        self.stage_paths: list[Path] = find_stages(levels_dir)
+        self.stage_paths: list[Path] = demo_stages(levels_dir)
         self.path: Path | None = None
         self.level = self.lview = self.initial = self.state = None
         self.history: list = []               # previous states, for undo and the move counter
+        self.view = None                      # what the board shows, split pieces kept in their slots
         self.game_over: str | None = None     # None | "win" | "lose"
         self.trace: Trace | None = None
         self.replay_index: int | None = None  # None while playing manually
@@ -286,6 +297,7 @@ class App:
         self.title_label["text"] = lview.name
         self.desc_label["text"] = lview.description
         self._clear_solution()
+        self.view = None
         self.restart()
         return True
 
@@ -317,7 +329,7 @@ class App:
         self.replay_index = None
         self.moves_list.selection_clear(0, "end")
         self.board.clear_banner()
-        self.board.show(self.lview, state_view(self.level, self.state))
+        self.board.show(self.lview, self._state_view())
         self._update_info()
 
     def _on_stage_selected(self, _event) -> None:
@@ -351,7 +363,7 @@ class App:
             return
         self.history.append(self.state)
         self.state = step[1]
-        self.board.animate_to(state_view(self.level, self.state), done=self._after_manual_move)
+        self.board.animate_to(self._state_view(), done=self._after_manual_move)
         self._update_info()
 
     def _after_manual_move(self) -> None:
@@ -380,7 +392,7 @@ class App:
         else:
             return
         self.board.clear_banner()
-        self.board.show(self.lview, state_view(self.level, self.state))
+        self.board.show(self.lview, self._state_view())
         self._update_info()
 
     # ---- solvers ------------------------------------------------------------------------------
@@ -528,7 +540,7 @@ class App:
         self.moves_list.selection_clear(0, "end")
         self.moves_list.selection_set(index)
         self.moves_list.see(index)
-        view = state_view(self.level, self.state)
+        view = self._state_view()
         tween = animate and previous is not None and abs(index - previous) == 1
         if tween and not self.board.animating:
             self.board.animate_to(view, duration=self._anim_ms(), done=self._after_replay_step)
@@ -580,9 +592,14 @@ class App:
             btn.state(flag if self.backend.solvers.get(label) else ["disabled"])
         self.stage_box.state(["disabled"] if busy else ["!disabled", "readonly"])
 
+    def _state_view(self):
+        """The view of self.state for the board, the head and the legs kept in their slots."""
+        self.view = keep_piece_order(self.view, state_view(self.level, self.state))
+        return self.view
+
     def _update_info(self) -> None:
         self.moves_var.set(f"Moves: {len(self.history)}")
-        view = state_view(self.level, self.state)
+        view = self._state_view()
         if view.orientation == SPLIT:
             marks = ["", ""]
             marks[view.active] = " (active)"

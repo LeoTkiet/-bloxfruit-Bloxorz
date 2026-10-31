@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import importlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -159,6 +159,25 @@ def state_view(level: engine.Level, state: engine.GameState) -> StateView:
     return StateView(state.orientation.name, engine.occupied_cells(state), 0, open_bridges)
 
 
+def keep_piece_order(previous: StateView | None, view: StateView) -> StateView:
+    """Keep each split piece in its slot from one view to the next (slot 0 is Buggy's head).
+
+    GameState sorts cube_positions so that equal states hash alike; after a move the cube that
+    was element 0 can become element 1. The cube that did not move keeps its slot here, so the
+    head and the legs never swap places on screen.
+    """
+    if previous is None or previous.orientation != SPLIT or view.orientation != SPLIT:
+        return view
+    swapped = view.cells[::-1]
+
+    def kept(cells) -> int:
+        return sum(old == new for old, new in zip(previous.cells, cells))
+
+    if kept(swapped) > kept(view.cells):
+        return replace(view, cells=swapped, active=1 - view.active)
+    return view
+
+
 @dataclass
 class Backend:
     load_level: Callable[[str], Any]
@@ -167,6 +186,7 @@ class Backend:
     is_goal: Callable[[Any, Any], bool]
     solvers: dict[str, Callable | None]
     unavailable: dict[str, str] = field(default_factory=dict)   # label -> why it is disabled
+    step_cost: Callable | None = None   # the one scale every route is priced on; None: the engine's
 
     def successor_for(self, level, state, key: str):
         """The (action, next_state, cost) triple for a GUI action key, or None if illegal."""
@@ -184,8 +204,10 @@ class Backend:
             step = self.successor_for(level, states[-1], action_key(move))
             if step is None:
                 raise InvalidSolution(f"{algorithm}: move {i} ({move}) is illegal in the engine.")
-            states.append(step[1])
-            costs.append(step[2])
+            action, next_state, cost = step
+            costs.append(self.step_cost(level, states[-1], action, next_state)
+                         if self.step_cost else cost)
+            states.append(next_state)
         if found and not self.is_goal(level, states[-1]):
             raise InvalidSolution(f"{algorithm}: the returned moves do not end on the goal.")
 
@@ -198,7 +220,8 @@ class Backend:
                 warning = f"{algorithm}: reported states differ from the engine replay."
         metrics = {
             "solution_length": _get(result, "solution_length", len(moves) if found else None),
-            "path_cost": _get(result, "path_cost", sum(costs) if found else None),
+            # priced here, not taken from the solver: BFS, DFS and IDS only count their moves
+            "path_cost": float(sum(costs)) if found else None,
             "expanded_nodes": _get(result, "expanded_nodes"),
             "search_time": _get(result, "search_time"),
             "peak_memory": _get(result, "peak_memory"),
@@ -206,14 +229,15 @@ class Backend:
         return Trace(algorithm, found, [action_label(m) for m in moves], states, metrics, warning)
 
 
-def _astar_solver(module) -> Callable:
-    """A* with the relaxed-board distance, which stays admissible on every stage.
+def _astar_solver(module, cost_fn: Callable | None = None) -> Callable:
+    """A* with the relaxed-board distance and its split-cube estimate, admissible on every stage.
 
-    Older solver modules without it fall back to TV4's geometric bound, which
-    assumes the block pays for every cell it travels: split switches teleport the
-    cubes, so stages that have them keep the safe zero heuristic.
+    It searches on the same cost as UCS, so the two can only differ in effort, not in what
+    they optimise. Older solver modules without the relaxed distance fall back to TV4's
+    geometric bound, which assumes the block pays for every cell it travels: split switches
+    teleport the cubes, so stages that have them keep the safe zero heuristic.
     """
-    relaxed = getattr(module, "relaxed_heuristic", None)
+    relaxed = getattr(module, "split_heuristic", getattr(module, "relaxed_heuristic", None))
     geometric = getattr(module, "astar_heuristic", None)
     zero = getattr(module, "zero_heuristic", None)
     if relaxed is None and (geometric is None or zero is None):
@@ -224,12 +248,12 @@ def _astar_solver(module) -> Callable:
             heuristic = relaxed
         else:
             heuristic = zero if getattr(level, "split_switches", ()) else geometric
-        return module.solve(level, initial_state, heuristic=heuristic)
+        return module.solve(level, initial_state, heuristic=heuristic, cost_fn=cost_fn)
     return solve
 
 
 def load_backend() -> Backend:
-    solvers, unavailable = {}, {}
+    solvers, unavailable, step_cost = {}, {}, None
     for label, (name, options) in _SOLVERS.items():
         try:
             module = importlib.import_module(name)
@@ -239,9 +263,11 @@ def load_backend() -> Backend:
             solvers[label] = None
             unavailable[label] = "not merged yet" if missing else f"{type(exc).__name__}: {exc}"
             continue
+        if name == "solvers.ucs":   # _SOLVERS lists UCS first, so A* can share its cost
+            step_cost = module.default_cost_function
         if name == "solvers.astar":
-            solvers[label] = _astar_solver(module)
+            solvers[label] = _astar_solver(module, step_cost)
         else:
             solvers[label] = functools.partial(module.solve, **options) if options else module.solve
     return Backend(engine.load_level, lambda level: level.initial_state, engine.get_successors,
-                   engine.is_goal, solvers, unavailable)
+                   engine.is_goal, solvers, unavailable, step_cost)

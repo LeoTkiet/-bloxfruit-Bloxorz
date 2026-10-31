@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from gui import backend as gui_backend  # noqa: E402
-from gui.app import App, find_stages  # noqa: E402
+from gui.app import DEMO_STAGES, App, find_stages  # noqa: E402
 from gui.backend import (BRIDGE, FLOOR, FRAGILE, GOAL, SOLVER_LABELS, SPLIT, SPLIT_SWITCH,  # noqa: E402
-                         VOID, StateView, action_key, level_view, load_backend, state_view)
+                         VOID, StateView, action_key, keep_piece_order, level_view,
+                         load_backend, state_view)
 
 LEVELS = ROOT / "levels"
 STAGES = find_stages(LEVELS)
@@ -87,6 +88,24 @@ class BackendTest(unittest.TestCase):
             self.assertEqual(len(view.cells), 1 if view.orientation == "STANDING" else 2)
         self.assertIn(frozenset(level.tiles.bridge_cells), {v.open_bridges for v in views})
 
+    def test_split_pieces_keep_their_slots_when_the_engine_reorders_cubes(self):
+        level = self.backend.load_level(str(LEVELS / "demo" / "07_split.json"))
+        result = self.backend.solvers["BFS"](level, self.backend.initial_state(level))
+        engine_views = [state_view(level, s) for s in result.states]
+        views, previous = [], None
+        for view in engine_views:
+            previous = keep_piece_order(previous, view)
+            views.append(previous)
+        reordered = 0
+        for before, after, raw in zip(views, views[1:], engine_views[1:]):
+            if before.orientation == SPLIT and after.orientation == SPLIT:
+                reordered += after.cells != raw.cells
+                self.assertEqual(set(after.cells), set(raw.cells))
+                self.assertEqual(after.cells[after.active], raw.cells[raw.active])
+                # one piece moves per step (none on a switch): the other keeps its slot
+                self.assertGreaterEqual(sum(a == b for a, b in zip(before.cells, after.cells)), 1)
+        self.assertGreater(reordered, 0, "the stage should make the engine reorder the cubes")
+
     def test_dfs_and_ids_buttons_use_their_own_strategy(self):
         level = self.backend.load_level(str(LEVELS / "advanced" / "07_advanced_mix.json"))
         start = self.backend.initial_state(level)
@@ -115,8 +134,34 @@ class BackendTest(unittest.TestCase):
         start = self.backend.initial_state(level)
         with mock.patch.object(astar, "solve", wraps=astar.solve) as solve:
             guided = self.backend.solvers["A*"](level, start)
-        self.assertIs(solve.call_args.kwargs["heuristic"], astar.relaxed_heuristic)
+        self.assertIs(solve.call_args.kwargs["heuristic"], astar.split_heuristic)
         self.assertEqual(guided.solution_length, astar.solve(level, start).solution_length)
+
+    def traces(self, stage):
+        level = self.backend.load_level(str(LEVELS / f"{stage}.json"))
+        start = self.backend.initial_state(level)
+        return {label: self.backend.trace_solution(level, start, self.backend.solvers[label](level, start), label)
+                for label in ("BFS", "UCS", "A*")}
+
+    def test_every_route_is_priced_on_the_same_scale(self):
+        traces = self.traces("advanced/02_fragile_band")
+        moves = {label: trace.metrics["solution_length"] for label, trace in traces.items()}
+        costs = {label: trace.metrics["path_cost"] for label, trace in traces.items()}
+        self.assertEqual(moves, {"BFS": 6, "UCS": 8, "A*": 8})
+        self.assertEqual(costs, {"BFS": 12.0, "UCS": 11.0, "A*": 11.0})
+
+    def test_astar_button_searches_on_the_cost_of_ucs(self):
+        ucs = importlib.import_module("solvers.ucs")
+        level = self.backend.load_level(str(LEVELS / "demo" / "08_showcase.json"))
+        start = self.backend.initial_state(level)
+        result = self.backend.solvers["A*"](level, start)
+        self.assertEqual(result.path_cost, ucs.solve(level, start).path_cost)
+
+    def test_astar_button_opens_fewer_nodes_than_ucs_on_a_split_stage(self):
+        level = self.backend.load_level(str(LEVELS / "demo" / "08_showcase.json"))
+        start = self.backend.initial_state(level)
+        self.assertLess(self.backend.solvers["A*"](level, start).expanded_nodes,
+                        self.backend.solvers["UCS"](level, start).expanded_nodes)
 
     def test_missing_or_broken_solver_only_disables_its_button(self):
         real_import = importlib.import_module
@@ -161,12 +206,15 @@ class AppTest(unittest.TestCase):
             self.app.move(key)
             self.settle()
 
-    def test_stages_are_listed_by_group(self):
-        labels = list(self.app.stage_box["values"])
-        self.assertEqual(labels[0], "basic/01_horizontal_intro")
-        self.assertLess(labels.index("basic/10_unsolvable_gap"),
-                        labels.index("advanced/01_fragile_corridor"))
-        self.assertIn("demo/08_showcase", labels)
+    def test_stage_list_holds_the_ten_demo_stages(self):
+        self.assertEqual(len(DEMO_STAGES), 10)
+        self.assertEqual(list(self.app.stage_box["values"]), list(DEMO_STAGES))
+        self.assertEqual(self.app.path, LEVELS / f"{DEMO_STAGES[0]}.json")
+
+    def test_a_stage_outside_the_list_still_opens_and_joins_it(self):
+        self.app.load_stage(LEVELS / "hard" / "03_switch_network.json")
+        self.assertEqual(self.app.stage_box.get(), "hard/03_switch_network")
+        self.assertEqual(len(self.app.stage_box["values"]), 11)
 
     def test_unavailable_solver_buttons_are_disabled(self):
         for label, btn in self.app.solver_btns.items():

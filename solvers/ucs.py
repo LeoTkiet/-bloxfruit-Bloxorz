@@ -10,7 +10,7 @@ from time import perf_counter
 import tracemalloc
 from typing import Callable
 
-from engine.core import Action, GameState, Level, get_successors, is_goal
+from engine.core import Action, GameState, Level, get_successors, is_goal, occupied_cells
 from engine.level_loader import load_level
 
 from .common import SolverResult
@@ -18,9 +18,12 @@ from .common import SolverResult
 CostFunction = Callable[[Level, GameState, Action, GameState], float]
 ParentEntry = tuple[GameState | None, Action | None]
 
+# UCS accepts up to three extra moves to avoid one landing on thin ice.
+FRAGILE_SURCHARGE = 3.0
+
 
 def default_cost_function(
-    _level: Level,
+    level: Level,
     state: GameState,
     action: Action,
     next_state: GameState,
@@ -31,13 +34,17 @@ def default_cost_function(
     * Switching between split cubes costs 0.5 (mental switch, no block translation).
     * Single cube movements cost 1.0.
     * Triggering a split switch costs 1.5 (teleportation energy).
+    * A step that lands on a fragile tile costs FRAGILE_SURCHARGE more (one wrong roll
+      there loses the stage). A cube resting on ice while the other one moves pays nothing.
     """
 
     if action is Action.SWITCH:
         return 0.5
-    if not state.is_split and next_state.is_split:
-        return 1.5
-    return 1.0
+    cost = 1.5 if not state.is_split and next_state.is_split else 1.0
+    landed = set(occupied_cells(next_state)) - set(occupied_cells(state))
+    if landed & level.tiles.fragile:
+        cost += FRAGILE_SURCHARGE
+    return cost
 
 
 def unit_cost_function(

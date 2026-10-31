@@ -1,6 +1,6 @@
 {
   "name": "Heavy Split Bridges",
-  "description": "Press the heavy switch before splitting: the reunited block needs bridge 1 and the soft switch for bridge 2.",
+  "description": "Press the heavy switch before splitting: one cube steps on the soft switch to open bridge 2, then the cubes reunite and cross both bridges.",
   "grid": [
     "S###..######........",
     "####..###o##........",
@@ -17,5 +17,5 @@
   "split_switches": [
     {"position": [6, 3], "targets": [[0, 6], [6, 11]]}
   ],
-  "expected_bfs_length": 33
+  "expected_bfs_length": 29
 }

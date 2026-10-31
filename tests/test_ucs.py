@@ -9,9 +9,73 @@ import unittest
 from engine.core import Action, GameState, Orientation, is_goal, replay
 from engine.level_loader import load_level, parse_grid
 from solvers.bfs import solve as solve_bfs
-from solvers.ucs import default_cost_function, solve, unit_cost_function
+from solvers.ucs import FRAGILE_SURCHARGE, default_cost_function, solve, unit_cost_function
 
-BASIC_LEVEL_DIR = Path(__file__).resolve().parents[1] / "levels" / "basic"
+LEVELS = Path(__file__).resolve().parents[1] / "levels"
+BASIC_LEVEL_DIR = LEVELS / "basic"
+
+
+def route_cost(level, result) -> float:
+    steps = zip(result.states, result.moves, result.states[1:])
+    return sum(default_cost_function(level, state, move, after) for state, move, after in steps)
+
+
+class FragileCostTests(unittest.TestCase):
+    """Landing on thin ice is what separates the UCS cost from counting moves."""
+
+    def setUp(self) -> None:
+        self.level = parse_grid(["S###", "##FF", "###G"], name="Ice")
+
+    def cost(self, state, action, next_state) -> float:
+        return default_cost_function(self.level, state, action, next_state)
+
+    def test_a_roll_costs_one_and_landing_on_ice_costs_the_surcharge_more(self) -> None:
+        start = GameState.standard((0, 0), Orientation.STANDING)
+        floor = GameState.standard((0, 1), Orientation.HORIZONTAL)
+        self.assertEqual(self.cost(start, Action.RIGHT, floor), 1.0)
+        before = GameState.standard((1, 1), Orientation.STANDING)
+        ice = GameState.standard((1, 2), Orientation.HORIZONTAL)
+        self.assertEqual(self.cost(before, Action.RIGHT, ice), 1.0 + FRAGILE_SURCHARGE)
+
+    def test_one_step_pays_once_even_when_only_half_of_the_block_is_on_ice(self) -> None:
+        before = GameState.standard((0, 1), Orientation.VERTICAL)
+        half = GameState.standard((0, 2), Orientation.VERTICAL)
+        self.assertEqual(self.cost(before, Action.RIGHT, half), 1.0 + FRAGILE_SURCHARGE)
+
+    def test_a_cube_resting_on_ice_pays_nothing(self) -> None:
+        resting = GameState.split(((0, 0), (1, 2)))
+        moved = GameState.split(((0, 1), (1, 2)))
+        self.assertEqual(self.cost(resting, Action.RIGHT, moved), 1.0)
+        self.assertEqual(self.cost(resting, Action.SWITCH, resting), 0.5)
+
+    def test_a_cube_stepping_onto_ice_pays_the_surcharge(self) -> None:
+        before = GameState.split(((0, 0), (1, 1)))
+        after = GameState.split(((0, 0), (1, 2)))
+        self.assertEqual(self.cost(before, Action.RIGHT, after), 1.0 + FRAGILE_SURCHARGE)
+
+    def test_a_split_costs_more_and_a_cube_thrown_onto_ice_adds_the_surcharge(self) -> None:
+        whole = GameState.standard((0, 3), Orientation.STANDING)
+        on_floor = GameState.split(((0, 0), (0, 1)))
+        on_ice = GameState.split(((0, 0), (1, 2)))
+        self.assertEqual(self.cost(whole, Action.UP, on_floor), 1.5)
+        self.assertEqual(self.cost(whole, Action.UP, on_ice), 1.5 + FRAGILE_SURCHARGE)
+
+    def test_ucs_takes_more_moves_to_avoid_ice_on_a_stage_where_bfs_does_not(self) -> None:
+        level = load_level(LEVELS / "advanced" / "02_fragile_band.json")
+        shortest, cheapest = solve_bfs(level), solve(level)
+        self.assertEqual((shortest.solution_length, route_cost(level, shortest)), (6, 12.0))
+        self.assertEqual((cheapest.solution_length, cheapest.path_cost), (8, 11.0))
+
+    def test_ucs_finds_a_cheaper_route_of_the_same_length(self) -> None:
+        level = load_level(LEVELS / "hard" / "02_fragile_bands.json")
+        shortest, cheapest = solve_bfs(level), solve(level)
+        self.assertEqual(cheapest.solution_length, shortest.solution_length)
+        self.assertLess(cheapest.path_cost, route_cost(level, shortest))
+
+    def test_without_ice_on_the_board_the_cost_is_the_number_of_moves(self) -> None:
+        level = load_level(LEVELS / "hard" / "01_grand_maze.json")
+        result = solve(level)
+        self.assertEqual(result.path_cost, float(solve_bfs(level).solution_length))
 
 
 class UniformCostSearchTests(unittest.TestCase):

@@ -83,6 +83,7 @@ def _circle(cam: Camera, x: float, y: float, z: float, radius: float, n: int = 1
 class BoardView(tk.Canvas):
     def __init__(self, master, on_hover=None, **kw):
         super().__init__(master, background=theme.SEA, highlightthickness=0, takefocus=1, **kw)
+        self.ui = self.winfo_fpixels("1i") / 96     # fonts grow with the DPI, so pixel sizes must too
         self.level: LevelView | None = None
         self.view: StateView | None = None
         self.on_hover = on_hover
@@ -594,40 +595,56 @@ class BoardView(tk.Canvas):
     def _draw_compass(self) -> None:
         """Which way the Up key rolls Buggy, since the camera can turn."""
         self.delete("compass")
-        cx, cy, radius = 40, self.winfo_height() - 40, 26
+        u = self.ui
+        radius, bottom = round(26 * u), self.winfo_height() - round(3 * u)
+        cx, cy = round(14 * u) + radius, bottom - self._text_height("Up", theme.FONT_SMALL) - radius
         x, y, _ = self.cam.target
         (x0, y0, _), (x1, y1, _) = self.cam.project((x, y, 0)), self.cam.project((x, y - 1, 0))
         length = math.hypot(x1 - x0, y1 - y0) or 1
         dx, dy = (x1 - x0) / length, (y1 - y0) / length
         self.create_oval(cx - radius, cy - radius, cx + radius, cy + radius, fill=theme.PANEL,
-                         outline=theme.BORDER, width=2, tags=("compass",))
-        self.create_line(cx - 12 * dx, cy - 12 * dy, cx + 12 * dx, cy + 12 * dy, arrow="last",
-                         arrowshape=(9, 11, 4), fill=theme.GOLD, width=3, tags=("compass",))
-        self.create_text(cx, cy + radius + 9, text="Up", fill=theme.BOARD_TEXT,
-                         font=theme.FONT_SMALL, tags=("compass",))
+                         outline=theme.BORDER, width=round(2 * u), tags=("compass",))
+        self.create_line(cx - 12 * u * dx, cy - 12 * u * dy, cx + 12 * u * dx, cy + 12 * u * dy,
+                         arrow="last", arrowshape=(9 * u, 11 * u, 4 * u), fill=theme.GOLD,
+                         width=round(3 * u), tags=("compass",))
+        self.create_text(cx, bottom, text="Up", fill=theme.BOARD_TEXT, font=theme.FONT_SMALL,
+                         anchor="s", tags=("compass",))
         self._restack()
 
+    def _text_height(self, text: str, font, width: int = 0) -> int:
+        """How tall `text` comes out on screen, wrapped at `width` pixels (0: no wrapping)."""
+        item = self.create_text(0, 0, text=text, font=font, width=width)
+        _, y0, _, y1 = self.bbox(item)
+        self.delete(item)
+        return y1 - y0
+
     def _draw_overlay(self) -> None:
-        """Messages in a GBA-style dialog box."""
+        """Messages in a GBA-style dialog box, tall enough for its text at any DPI."""
         self.delete("overlay")
         if self._banner is None:
             return
         title, subtitle, kind = self._banner
         w, h = self.winfo_width(), self.winfo_height()
-        p = 3
-        bw, bh = min(w - 8 * p, 480), 96 if subtitle else 64
+        p, shadow = round(3 * self.ui), round(2 * self.ui)
+        bw = min(w - 8 * p, round(480 * self.ui))
+        wrap = bw - 10 * p
+        title_h = self._text_height(title, theme.FONT_BANNER, wrap)
+        bh = title_h + 12 * p
+        if subtitle:
+            bh += 2 * p + self._text_height(subtitle, theme.FONT, wrap)
         x0, y0 = (w - bw) // 2, (h - bh) // 2
         x1, y1 = x0 + bw, y0 + bh
         for inset, color in ((0, theme.INK), (p, theme.BORDER), (3 * p, theme.BANNER_COLORS[kind])):
             self.create_rectangle(x0 + inset, y0 + inset, x1 - inset, y1 - inset, fill=color,
                                   outline="", tags=("overlay",))
-        ty = y0 + (32 if subtitle else bh / 2)
-        for dx, color in ((2, theme.INK), (0, "white")):   # text with a drop shadow
+        ty = y0 + 6 * p
+        for dx, color in ((shadow, theme.INK), (0, "white")):   # text with a drop shadow
             self.create_text(w / 2 + dx, ty + dx, text=title, fill=color, font=theme.FONT_BANNER,
-                             tags=("overlay",))
+                             width=wrap, justify="center", anchor="n", tags=("overlay",))
         if subtitle:
-            self.create_text(w / 2, y0 + 66, text=subtitle, fill="white", font=theme.FONT,
-                             width=bw - 10 * p, tags=("overlay",))
+            self.create_text(w / 2, ty + title_h + 2 * p, text=subtitle, fill="white",
+                             font=theme.FONT, width=wrap, justify="center", anchor="n",
+                             tags=("overlay",))
 
     # ---- ambient animation / mouse ----------------------------------------------------------
     def _ambient(self) -> None:

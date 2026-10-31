@@ -134,5 +134,42 @@ class BoardTest(unittest.TestCase):
         self.assertEqual((self.board.cam.yaw, self.board.zoom), (-22.0, 1.0))
 
 
+class ScaledFurnitureTest(unittest.TestCase):
+    """The banner and compass must fit at any DPI, where fonts grow with the display scale."""
+
+    def check(self, dpi):
+        try:
+            root = tk.Tk()
+        except tk.TclError as exc:
+            self.skipTest(f"no display available: {exc}")
+        root.tk.call("tk", "scaling", dpi / 72)
+        root.geometry("1400x1000+0+0")
+        app = App(root, load_backend(), LEVELS)
+        self.addCleanup(app.close)
+        app.load_stage(LEVELS / "demo" / "04_fragile.json")
+        board = app.board
+        board.set_banner("Stage complete!", "Buggy reached the treasure in 2 moves.  "
+                                            "Enter: next stage  -  R: play again", "win")
+        root.update()
+        w, h = board.winfo_width(), board.winfo_height()
+
+        x0, y0, x1, y1 = board.bbox("compass")
+        self.assertTrue(0 <= x0 and 0 <= y0 and x1 <= w and y1 <= h, board.bbox("compass"))
+
+        items = board.find_withtag("overlay")
+        box = board.bbox(items[0])
+        _, title, subtitle = [board.bbox(i) for i in items if board.type(i) == "text"]
+        self.assertLessEqual(title[3], subtitle[1])
+        for text in (title, subtitle):
+            self.assertTrue(box[0] <= text[0] and box[1] <= text[1]
+                            and text[2] <= box[2] and text[3] <= box[3], (box, text))
+
+    def test_fits_at_normal_dpi(self):
+        self.check(96)
+
+    def test_fits_at_double_dpi(self):
+        self.check(192)
+
+
 if __name__ == "__main__":
     unittest.main()

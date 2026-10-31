@@ -3,11 +3,14 @@
     python tools/benchmark.py                       # all stages -> docs/experiments/results.csv
     python tools/benchmark.py --groups hard split   # only some levels/ sub-folders
     python tools/benchmark.py --repeat 5 --out other.csv
+    python tools/benchmark.py --solvers BFS UCS "A* relaxed (UCS cost)" --out docs/experiments/bfs_ucs_astar.csv
 
 Each row is one (stage, solver) pair with the four required metrics: search time (median of
 `--repeat` runs, in milliseconds), peak memory (tracemalloc, KiB), expanded nodes and solution
-length, plus the path cost. Searches slower than `--slow` seconds run only once. The geometric
-A* row is skipped on split stages, where that bound is not admissible.
+length, plus the path cost the solver optimised and `ucs_cost`, the route priced with the UCS
+cost function, the one scale on which all solvers can be compared. Searches slower than `--slow`
+seconds run only once. The geometric A* row is skipped on split stages, where that bound is not
+admissible.
 """
 from __future__ import annotations
 
@@ -32,9 +35,19 @@ SOLVERS = {
     "A* h=0": lambda level: astar.solve(level, heuristic=astar.zero_heuristic),
     "A* geometric": lambda level: astar.solve(level, heuristic=astar.astar_heuristic),
     "A* relaxed": lambda level: astar.solve(level, heuristic=astar.relaxed_heuristic),
+    "A* relaxed (UCS cost)": lambda level: astar.solve(level, heuristic=astar.relaxed_heuristic,
+                                                       cost_fn=ucs.default_cost_function),
+    "A* split": lambda level: astar.solve(level, heuristic=astar.split_heuristic),
+    "A* split (UCS cost)": lambda level: astar.solve(level, heuristic=astar.split_heuristic,
+                                                     cost_fn=ucs.default_cost_function),
 }
-FIELDS = ("group", "stage", "solver", "found", "solution_length", "path_cost",
+FIELDS = ("group", "stage", "solver", "found", "solution_length", "path_cost", "ucs_cost",
           "expanded_nodes", "peak_memory_kib", "search_time_ms")
+
+
+def ucs_cost(level, result) -> float:
+    steps = zip(result.states, result.moves, result.states[1:])
+    return sum(ucs.default_cost_function(level, state, move, after) for state, move, after in steps)
 
 
 def measure(solver, level, repeat: int, slow: float) -> dict:
@@ -46,6 +59,7 @@ def measure(solver, level, repeat: int, slow: float) -> dict:
         "found": result.found,
         "solution_length": result.solution_length if result.found else "",
         "path_cost": result.path_cost if result.found else "",
+        "ucs_cost": ucs_cost(level, result) if result.found else "",
         "expanded_nodes": result.expanded_nodes,
         "peak_memory_kib": round(result.peak_memory / 1024, 1),
         "search_time_ms": round(statistics.median(r.search_time for r in runs) * 1000, 3),
@@ -55,6 +69,7 @@ def measure(solver, level, repeat: int, slow: float) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--groups", nargs="+", default=GROUPS, choices=GROUPS)
+    parser.add_argument("--solvers", nargs="+", default=list(SOLVERS), choices=list(SOLVERS))
     parser.add_argument("--repeat", type=int, default=3, help="runs per search (median time)")
     parser.add_argument("--slow", type=float, default=2.0, help="seconds after which a search runs once")
     parser.add_argument("--out", type=Path, default=ROOT / "docs" / "experiments" / "results.csv")
@@ -68,16 +83,16 @@ def main() -> int:
             for path in sorted((ROOT / "levels" / group).glob("*.json")):
                 level = load_level(path)
                 for name, solver in SOLVERS.items():
-                    if name == "A* geometric" and level.split_switches:
+                    if name not in args.solvers or (name == "A* geometric" and level.split_switches):
                         continue
                     row = {"group": group, "stage": path.stem, "solver": name,
                            **measure(solver, level, args.repeat, args.slow)}
                     writer.writerow(row)
                     handle.flush()
-                    print(f"{group}/{path.stem:28s} {name:13s} len={row['solution_length']!s:>4} "
+                    print(f"{group}/{path.stem:28s} {name:21s} len={row['solution_length']!s:>4} "
                           f"expanded={row['expanded_nodes']:>7} time={row['search_time_ms']:>10} ms",
                           flush=True)
-    print(f"wrote {args.out.relative_to(ROOT)}")
+    print(f"wrote {args.out}")
     return 0
 
 
